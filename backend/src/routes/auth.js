@@ -7,6 +7,30 @@ const { authMiddleware } = require("../middleware/authMiddleware");
 const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET is missing");
+}
+
+const isProd = process.env.NODE_ENV === "production";
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: isProd,                 
+  sameSite: isProd ? "none" : "lax", 
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+  path: "/",
+};
+
+function signToken(user) {
+  return jwt.sign(
+    {
+      id: user._id.toString(),
+      email: user.email,
+    },
+    JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+}
 
 router.post("/signin", async (req, res) => {
   try {
@@ -20,7 +44,6 @@ router.post("/signin", async (req, res) => {
     }
 
     const existingUser = await User.findOne({ email });
-
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -30,32 +53,16 @@ router.post("/signin", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = new User({
+    const newUser = await User.create({
       name,
       email,
       password: hashedPassword,
     });
 
-    await newUser.save();
+    const token = signToken(newUser);
 
-    const token = jwt.sign(
-      {
-        id: newUser._id,
-        email: newUser.email,
-      },
-      JWT_SECRET,
-      {
-        expiresIn: "7d",
-      },
-    );
-
-    res
-      .cookie("token", token, {
-        httpOnly: true,
-        secure: false,
-        sameSite: "lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      })
+    return res
+      .cookie("token", token, cookieOptions)
       .status(201)
       .json({
         success: true,
@@ -68,8 +75,7 @@ router.post("/signin", async (req, res) => {
       });
   } catch (err) {
     console.log("Signup Error:", err);
-
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Server error",
     });
@@ -88,7 +94,6 @@ router.post("/login", async (req, res) => {
     }
 
     const user = await User.findOne({ email });
-
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -97,7 +102,6 @@ router.post("/login", async (req, res) => {
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
-
     if (!isMatch) {
       return res.status(401).json({
         success: false,
@@ -105,24 +109,10 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-      {
-        id: user._id,
-        email: user.email,
-      },
-      JWT_SECRET,
-      {
-        expiresIn: "7d",
-      },
-    );
+    const token = signToken(user);
 
-    res
-      .cookie("token", token, {
-        httpOnly: true,
-        secure: false,
-        sameSite: "lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      })
+    return res
+      .cookie("token", token, cookieOptions)
       .status(200)
       .json({
         success: true,
@@ -135,8 +125,7 @@ router.post("/login", async (req, res) => {
       });
   } catch (err) {
     console.log("Login Error:", err);
-
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Server error",
     });
@@ -145,7 +134,7 @@ router.post("/login", async (req, res) => {
 
 router.get("/me", authMiddleware, async (req, res) => {
   try {
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       user: {
         name: req.user.name,
@@ -154,26 +143,25 @@ router.get("/me", authMiddleware, async (req, res) => {
     });
   } catch (err) {
     console.log(err);
-
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Server error",
     });
   }
 });
 
-router.post("/logout", authMiddleware, async (req, res) => {
+router.post("/logout", (req, res) => {
   try {
-    res.clearCookie("token");
-
-    res.status(200).json({
-      success: true,
-      message: "Logged out successfully",
-    });
+    return res
+      .clearCookie("token", cookieOptions)
+      .status(200)
+      .json({
+        success: true,
+        message: "Logged out successfully",
+      });
   } catch (err) {
     console.log("Logout Error:", err);
-
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Logout failed",
     });
