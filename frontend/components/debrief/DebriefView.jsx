@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { Share2 } from "lucide-react";
 import DecisionBreakdown from "./DecisionBreakdown";
 import LessonCards from "./LessonCards";
+import ShareSheet from "@/components/share/ShareSheet";
 import { lessonMistakesFromDebrief } from "@/lib/mistake-patterns";
 
 const NetWorthChart = dynamic(() => import("@/components/ui/NetWorthChart"), {
@@ -96,13 +98,13 @@ export default function DebriefView({
   scenarioId,
   compact = false,
   showActions = false,
+  shareSessionId = null,
   onPlayAgain,
   onDashboard,
-  onShare,
   onReplayMoment,
-  copied = false,
 }) {
   const [highlightRound, setHighlightRound] = useState(null);
+  const [shareOpen, setShareOpen] = useState(false);
 
   if (!debrief) return null;
 
@@ -450,20 +452,34 @@ export default function DebriefView({
           >
             Dashboard
           </button>
-          <button
-            type="button"
-            onClick={onShare}
-            className="px-8 py-3.5 rounded-xl font-semibold text-sm border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F59E0B] flex items-center gap-2"
-            style={{
-              borderColor: "#2A2A2A",
-              color: copied ? "#10B981" : "#A1A1A1",
-              background: "#111111",
-              fontFamily: "var(--font-display)",
-            }}
-          >
-            {copied ? "Copied!" : "Share Result"}
-          </button>
+          {shareSessionId ? (
+            <button
+              type="button"
+              onClick={() => setShareOpen(true)}
+              className="px-8 py-3.5 rounded-xl font-semibold text-sm border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F59E0B] flex items-center gap-2"
+              style={{
+                borderColor: "#2A2A2A",
+                color: "#A1A1A1",
+                background: "#111111",
+                fontFamily: "var(--font-display)",
+              }}
+            >
+              <Share2 className="w-4 h-4" aria-hidden />
+              Share Result
+            </button>
+          ) : null}
         </div>
+      ) : null}
+
+      {shareSessionId ? (
+        <ShareSheet
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+          sessionId={shareSessionId}
+          debrief={debrief}
+          displayMetrics={displayMetrics}
+          playerName={playerName}
+        />
       ) : null}
     </div>
   );

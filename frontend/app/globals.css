@@ -217,6 +217,25 @@ body {
   background-clip: text;
 }
 
+/* Share card — subtle float on public landing */
+.share-card-landing {
+  animation: share-card-float 6s ease-in-out infinite;
+}
+
+@keyframes share-card-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.share-card-stat {
+  backdrop-filter: blur(8px);
+}
+
 .noise-overlay::after {
   content: "";
   position: absolute;

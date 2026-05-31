@@ -10,6 +10,7 @@ const Setup = require("./src/routes/setup");
 const Auth = require("./src/routes/auth");
 const AI = require("./src/routes/ai");
 const Game = require("./src/routes/game");
+const Share = require("./src/routes/share");
 const app = express();
 
 // ── Middleware ────────────────────────────────────────────────────────────────
@@ -37,6 +38,7 @@ app.use("/api/auth", limiter, Auth);
 app.use("/api", limiter, Setup);
 app.use("/api/ai", aiLimiter, AI);
 app.use("/api/game", limiter, Game);
+app.use("/api/share", limiter, Share);
 
 app.use("/api/health", (req, res) => {
   res.status(200).json({ success: true, message: "Server is running" });

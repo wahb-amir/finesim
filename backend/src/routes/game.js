@@ -12,6 +12,7 @@ const {
   userData,
 } = require("../controller/game");
 const { requestAdvisor } = require("../controller/advisor");
+const { createSessionShare } = require("../controller/share");
 
 // POST /api/game/session          — start a new game session
 router.post("/session", authMiddleware, createSession);
@@ -27,6 +28,9 @@ router.post("/session/:id/advisor", authMiddleware, requestAdvisor);
 
 // GET  /api/game/session/:id/debrief — lazy-generate + return debrief payload
 router.get("/session/:id/debrief", authMiddleware, getSessionDebrief);
+
+// POST /api/game/session/:id/share — create public share card + link
+router.post("/session/:id/share", authMiddleware, createSessionShare);
 
 // GET  /api/game/session/:id      — get session by id
 router.get("/session/:id", authMiddleware, getSession);

@@ -136,6 +136,12 @@ const gameSessionSchema = new mongoose.Schema(
     /** When debrief generation finished (null until generated). */
     debriefGeneratedAt: { type: Date },
 
+    // ── Viral share card (public preview by slug) ─────────────────────────────
+    /** Short public id for /share/:slug — no auth required to view card. */
+    shareSlug: { type: String, unique: true, sparse: true, index: true },
+    /** When the player first generated a share link. */
+    shareCreatedAt: { type: Date },
+
     // ── In-game advisor (server-authoritative, max 4 calls per session) ───────
     /** Number of advisor calls consumed this session (max 4). */
     advisorCallsUsed: { type: Number, default: 0 },

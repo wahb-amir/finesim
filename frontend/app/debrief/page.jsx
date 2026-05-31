@@ -25,7 +25,6 @@ function DebriefContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [serverMetrics, setServerMetrics] = useState(null);
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -78,16 +77,6 @@ function DebriefContent() {
   const displayMetrics = serverMetrics || metrics;
   const netWorth =
     displayMetrics?.netWorth ?? debrief?.finalMetrics?.netWorth ?? 0;
-
-  const handleShare = () => {
-    const text =
-      debrief?.shareText ||
-      `FinSim Result — ${playerName || debrief?.playerName || "Player"}\nNet Worth: $${netWorth.toLocaleString()}\nCredit Score: ${displayMetrics?.creditScore ?? "—"}`;
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
 
   const handlePlayAgain = () => {
     resetGame();
@@ -174,8 +163,7 @@ function DebriefContent() {
           onPlayAgain={handlePlayAgain}
           onReplayMoment={handleReplayMoment}
           onDashboard={() => router.push("/dashboard")}
-          onShare={handleShare}
-          copied={copied}
+          shareSessionId={sessionId}
         />
       </div>
     </div>
