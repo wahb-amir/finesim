@@ -1,354 +1,220 @@
 # FinSim Frontend (`@finsim/web`)
 
-Next.js 16 App Router application for the FinSim player experience. This package **renders server state** and **collects player input** — it does not run the financial simulation.
-
-All round outcomes, metrics, and events come from `@finsim/api`. Local state (`GameContext`) is a view layer that hydrates from API responses and tracks UI-only concerns (selected choice, advisor panel open, etc.).
+Next.js 16 App Router application that renders the FinSim game UI. The frontend is intentionally thin: it sends player choices to the Express API and renders whatever the server returns. No simulation logic runs in the browser.
 
 ---
 
-## Table of contents
+## Table of Contents
 
-- [Quick start](#quick-start)
-- [Environment](#environment)
-- [Folder structure](#folder-structure)
-- [Routes & user flows](#routes--user-flows)
-- [Data flow](#data-flow)
-- [State management](#state-management)
-- [API integration](#api-integration)
-- [Key components](#key-components)
-- [Design system](#design-system)
-- [Path aliases & conventions](#path-aliases--conventions)
-- [Development tips](#development-tips)
+- [Quick Start](#quick-start)
+- [App Structure](#app-structure)
+- [Pages & Routes](#pages--routes)
+- [State Management](#state-management)
+- [API Integration](#api-integration)
+- [Key Components](#key-components)
+- [Tech Stack](#tech-stack)
 
 ---
 
-## Quick start
+## Quick Start
 
 ```bash
-# From repo root — backend must be running (see backend/README.md)
+# From repo root
+echo "NEXT_PUBLIC_API_URL=http://localhost:8081/api" > frontend/.env.local
+
 pnpm install
-
-# Create frontend/.env.local:
-# NEXT_PUBLIC_API_URL=http://localhost:8081/api
-
-pnpm dev
+pnpm dev          # starts Next.js on port 3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+The backend must be running on port 8081 (or wherever `NEXT_PUBLIC_API_URL` points). See the [backend README](../backend/README.md) for setup.
 
----
-
-## Environment
-
-Create `frontend/.env.local`:
+Production build:
 
 ```bash
-NEXT_PUBLIC_API_URL=http://localhost:8081/api
-```
-
-All authenticated API calls use `credentials: "include"` so the backend's httpOnly JWT cookie is sent automatically.
-
-The shared constant lives in `components/game/constants.js`:
-
-```js
-export const API = process.env.NEXT_PUBLIC_API_URL;
+pnpm build
+pnpm start
 ```
 
 ---
 
-## Folder structure
+## App Structure
 
-```text
+```
 frontend/
-├── app/                              # Next.js App Router
-│   ├── layout.jsx                    # Root layout, fonts, providers
-│   ├── globals.css                   # Design tokens, animations
-│   ├── page.jsx                      # Landing (/)
-│   ├── auth/page.jsx                 # Sign up / log in
-│   ├── dashboard/page.jsx            # Session history hub
-│   ├── setup/page.jsx                # New game configuration
-│   ├── game/page.jsx                 # Game board (wraps GameContent)
-│   ├── debrief/page.jsx              # Post-game analysis + chart
-│   ├── profile/page.jsx              # Account + stats
-│   ├── leaderboard/page.jsx          # Mock leaderboard
-│   ├── onboarding/page.jsx           # Alternate onboarding flow
-│   ├── icon.svg                      # App icon
-│   └── context/
-│       └── AuthContext.js            # User session (JWT cookie)
+├── app/                        # Next.js App Router
+│   ├── layout.jsx              # Root layout — wraps all pages in AppProviders
+│   ├── page.jsx                # Landing page (/)
+│   ├── auth/page.jsx           # Sign up / log in
+│   ├── dashboard/page.jsx      # Session history + start new game
+│   ├── setup/page.jsx          # Game configuration
+│   ├── game/page.jsx           # Main game board
+│   ├── debrief/page.jsx        # Post-game debrief
+│   ├── profile/page.jsx        # Account + onboarding profile
+│   ├── leaderboard/page.jsx    # Top scores
+│   ├── onboarding/page.jsx     # Onboarding flow
+│   ├── share/[slug]/           # Public shareable debrief view
+│   ├── context/
+│   │   └── AuthContext.js      # Authentication state + user object
+│   └── globals.css
 │
 ├── components/
-│   ├── providers/
-│   │   └── AppProviders.jsx          # Wraps GameProvider
 │   ├── brand/
-│   │   └── BrandLogo.jsx             # Shared logo mark
-│   ├── layout/
-│   │   ├── AppNavbar.jsx             # Authenticated nav
-│   │   └── HeaderFooter.jsx          # Marketing layout shell
-│   ├── game/                         # Game board building blocks
-│   │   ├── GameContent.jsx           # ★ Main game orchestrator
-│   │   ├── GameHeader.jsx
-│   │   ├── GameMetricsSidebar.jsx
-│   │   ├── GameRoundPanel.jsx
-│   │   ├── GameFooter.jsx
-│   │   ├── GameLoadingScreen.jsx
-│   │   ├── GameToast.jsx
-│   │   ├── CreditBadge.jsx
-│   │   ├── SwipeDecisionCard.tsx     # Swipe / click decisions
-│   │   └── constants.js              # TOTAL_ROUNDS, API base URL
-│   ├── ui/                           # Reusable UI primitives
-│   │   ├── MetricCard.jsx
-│   │   ├── AdvisorPanel.jsx
-│   │   ├── NetWorthChart.jsx
-│   │   ├── BottomSheet.tsx           # Mobile advisor drawer
-│   │   ├── Modal.jsx / ConfirmModal.jsx
-│   │   └── ...
+│   │   └── BrandLogo.jsx
 │   ├── dashboard/
 │   │   └── SessionDetailModal.jsx
+│   ├── debrief/
+│   │   ├── DebriefView.jsx         # Full debrief layout
+│   │   ├── DecisionBreakdown.jsx   # Round-by-round decision analysis
+│   │   └── LessonCards.jsx         # Behavioral insight cards
+│   ├── features/
+│   │   └── InteractiveTools.jsx    # Landing page: CompoundCalculator, DecisionSimulator
+│   ├── game/
+│   │   ├── GameContent.jsx
+│   │   ├── GameFooter.jsx
+│   │   ├── GameHeader.jsx
+│   │   ├── GameLoadingScreen.jsx
+│   │   ├── GameMetricsSidebar.jsx
+│   │   ├── GameRoundPanel.jsx
+│   │   ├── GameToast.jsx
+│   │   ├── SwipeDecisionCard.tsx
+│   │   ├── CreditBadge.jsx
+│   │   └── constants.js
+│   ├── layout/
+│   │   ├── AppNavbar.jsx
+│   │   ├── Breadcrumb.jsx
+│   │   └── HeaderFooter.jsx       # Nav, Footer, Ticker
+│   ├── providers/
+│   │   └── AppProviders.jsx       # Composes AuthContext + GameContext providers
 │   ├── sections/
-│   │   └── CoreSections.jsx          # Landing page sections
-│   └── features/
-│       └── InteractiveTools.jsx
+│   │   └── CoreSections.jsx       # Landing page sections
+│   ├── share/
+│   │   ├── ShareCard.jsx
+│   │   └── ShareSheet.jsx
+│   └── ui/
+│       ├── AdvisorPanel.jsx
+│       ├── BottomSheet.tsx
+│       ├── ChoiceCard.jsx
+│       ├── ConfirmModal.jsx
+│       ├── MetricCard.jsx
+│       ├── Modal.jsx
+│       ├── NetWorthChart.jsx
+│       ├── RoundProgress.jsx
+│       └── StatCard.jsx
 │
 ├── context/
-│   └── GameContext.jsx               # Client game view state (reducer)
+│   └── GameContext.jsx            # Client-side game view state
 │
 ├── hooks/
-│   └── useGameSession.js             # Load + hydrate session from API
+│   └── useGameSession.js          # API calls for game session lifecycle
 │
-├── lib/
-│   ├── api.js                        # Advisor request + legacy mocks
-│   ├── data.js                       # Static marketing / landing data
-│   ├── format.js                     # Currency, label formatters
-│   └── game-types.ts                 # Shared TypeScript types
-│
-├── public/                           # Static assets
-├── next.config.ts
-├── tsconfig.json                     # @/* path alias
-└── package.json
+└── lib/
+    ├── api.js                     # All fetch wrappers for the backend API
+    ├── data.js                    # Static / reference data
+    ├── debrief-utils.js           # Debrief payload helpers
+    ├── format.js                  # Number, currency, score formatters
+    ├── game-types.ts              # TypeScript types for game objects
+    ├── mistake-patterns.js        # Behavioral pattern label maps
+    └── share.js                   # Share link utilities
 ```
 
 ---
 
-## Routes & user flows
+## Pages & Routes
 
-| Route          | File                       | Auth | What happens                                              |
-| -------------- | -------------------------- | ---- | --------------------------------------------------------- |
-| `/`            | `app/page.jsx`             | No   | Marketing landing                                         |
-| `/auth`        | `app/auth/page.jsx`        | No   | Register or log in → redirect to `/dashboard`             |
-| `/dashboard`   | `app/dashboard/page.jsx`   | Yes  | List sessions, resume active, start new                   |
-| `/setup`       | `app/setup/page.jsx`       | Yes  | Pick career, salary, goal, climate → `POST /game/session` |
-| `/game`        | `app/game/page.jsx`        | Yes  | Play rounds; `?sessionId=` or localStorage fallback       |
-| `/debrief`     | `app/debrief/page.jsx`     | Yes  | Fetch debrief; `?sessionId=` required                     |
-| `/profile`     | `app/profile/page.jsx`     | Yes  | User stats from `/game/sessions/userData`                 |
-| `/leaderboard` | `app/leaderboard/page.jsx` | No   | Uses `MOCK_LEADERBOARD` from `lib/api.js`                 |
+| Route            | Auth     | Description                                                      |
+| ---------------- | -------- | ---------------------------------------------------------------- |
+| `/`              | No       | Landing page — hero, stats, compound calculator, decision simulator, leaderboard preview |
+| `/auth`          | No       | Sign up / log in form. Redirects to `/dashboard` on success.    |
+| `/dashboard`     | Yes      | Lists past sessions with a session detail modal. CTA to start a new game. |
+| `/setup`         | Yes      | Career, salary, financial goal, and climate configuration. POSTs to `/api/game/session`. |
+| `/game`          | Yes      | Main game board — round progress, event card, metrics sidebar, swipe/click choices, advisor panel. |
+| `/debrief`       | Yes      | Full post-game report: verdict, behavioral profile, decision breakdown, net worth chart. |
+| `/profile`       | Yes      | Account settings and onboarding profile.                         |
+| `/leaderboard`   | No       | Top scores across players.                                       |
+| `/onboarding`    | —        | Onboarding flow (alternate entry point).                         |
+| `/share/[slug]`  | No       | Public read-only debrief view for a shared session.              |
 
-### Typical new-player flow
-
-```text
-/auth (create account)
-  → /dashboard
-  → /setup (POST /api/game/session)
-  → /game?sessionId=<id>
-  → [10 rounds: POST /api/game/session/round]
-  → /debrief?sessionId=<id>
-  → /dashboard
-```
-
-### Returning player
-
-`/dashboard` lists sessions. An **active** session can be resumed via `/game?sessionId=...`. **Completed** sessions link to debrief. **Abandoned** sessions appear in history but cannot be resumed.
+Unauthenticated users attempting to access protected routes are redirected to `/auth`.
 
 ---
 
-## Data flow
+## State Management
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  Page (setup, game, debrief, dashboard)                      │
-└─────────────────────────┬────────────────────────────────────┘
-                          │
-          ┌───────────────┼───────────────┐
-          ▼               ▼               ▼
-   AuthContext     GameContext     useGameSession
-   (who am I?)     (what do I      (load session
-                    see on screen?)  from API)
-          │               ▲               │
-          │               │               │
-          └─────── fetch ─┴───────────────┘
-                          │
-                          ▼
-              NEXT_PUBLIC_API_URL
-              (http://localhost:8081/api)
-                          │
-                          ▼
-                   Express backend
-```
+### `AuthContext` (`app/context/AuthContext.js`)
 
-### Session lifecycle (game page)
+Provides `user`, `loading`, `login`, `logout`, and `signup` to the entire app. Persists authentication state across page navigation via the backend's httpOnly JWT cookie. Mounted at the root layout via `AppProviders`.
 
-1. **`useGameSession`** reads `sessionId` from URL, route params, or `localStorage`.
-2. **`GET /game/session/:id`** returns current metrics, event, narrative, round number.
-3. **`hydrateGameView`** dispatches into `GameContext` — UI re-renders.
-4. Player picks **left/right** → stored as `selectedChoice` in context.
-5. **`handleConfirm`** in `GameContent.jsx` → **`POST /game/session/round`** with `{ sessionId, choice }`.
-6. Response hydrates the next round, or redirects to `/debrief` if completed.
-7. Optional: **`requestAdvisor(sessionId)`** from `lib/api.js` → **`POST /game/session/:id/advisor`**.
+### `GameContext` (`context/GameContext.jsx`)
 
-The frontend never sends computed metrics back to the server.
+Client-side view state for an active game session: current event, metrics, round number, advisor state, and UI flags (loading, toast messages, etc.). Populated by API responses from `useGameSession`. Does **not** compute any outcomes — it mirrors what the server returns.
+
+`AppProviders` (`components/providers/AppProviders.jsx`) composes both contexts and wraps the root layout.
 
 ---
 
-## State management
+## API Integration
 
-Two React contexts, mounted in `app/layout.jsx`:
+All backend calls are centralized in `lib/api.js`. Every function uses `fetch` with `credentials: "include"` so the auth cookie is sent automatically.
 
-### AuthContext (`app/context/AuthContext.js`)
+The `useGameSession` hook (`hooks/useGameSession.js`) wraps the game-specific calls (start session, submit round, fetch advisor, fetch debrief) and keeps `GameContext` in sync.
 
-- `user`, `loading`, `isAuthenticated`
-- `fetchMe()` — `GET /auth/me` on mount
-- `login`, `logout`, `setUser`
-- Redirect unauthenticated users away from protected pages
+Key API functions (from `lib/api.js`):
 
-### GameContext (`context/GameContext.jsx`)
-
-Client-side **view state** only:
-
-| State field        | Purpose                                          |
-| ------------------ | ------------------------------------------------ |
-| `playerName`       | Display name                                     |
-| `currentRound`     | Round indicator (1–10)                           |
-| `metrics`          | UI-shaped numbers from API                       |
-| `currentEvent`     | Event card (title, left/right options)           |
-| `currentNarrative` | Headline + advisor hint                          |
-| `selectedChoice`   | `"left"` or `"right"` before confirm             |
-| `roundHistory`     | Client-side snapshots for UI (not authoritative) |
-| `advisorMessages`  | Display list (also persisted server-side)        |
-| `debriefData`      | Cached debrief payload                           |
-
-Key actions: `hydrateGameView`, `selectChoice`, `recordRoundSnapshot`, `setDebriefData`, `resetGame`.
-
-`AppProviders` wraps children with `GameProvider` only; `AuthProvider` sits alongside it in the root layout.
+- `createSession(payload)` — POST `/api/game/session`
+- `submitRound(sessionId, choice)` — POST `/api/game/session/round`
+- `fetchAdvisor(sessionId)` — POST `/api/game/session/:id/advisor`
+- `fetchDebrief(sessionId)` — GET `/api/game/session/:id/debrief`
+- `fetchSessions()` — GET `/api/game/sessions`
+- `fetchUserData()` — GET `/api/game/sessions/userData`
+- `createShare(sessionId)` — POST `/api/share`
+- `login`, `signup`, `logout`, `getMe` — auth endpoints
 
 ---
 
-## API integration
+## Key Components
 
-Every authenticated request pattern:
+### Game Board (`components/game/`)
 
-```js
-const res = await fetch(`${API}/game/session/${sessionId}`, {
-  method: "GET",
-  credentials: "include",
-  headers: { "Content-Type": "application/json" },
-});
-const data = await res.json();
-if (!res.ok || !data?.success) {
-  /* handle error */
-}
-```
+The main gameplay UI assembled from composable parts:
 
-### Endpoints used by the frontend
+- **`GameHeader`** — round counter, age, session metadata
+- **`GameMetricsSidebar`** — live metric cards (net worth, credit score, debt, surplus, stress, 401k status)
+- **`GameRoundPanel`** — event narrative and choice layout
+- **`SwipeDecisionCard`** — swipeable/clickable card rendering a single choice with bullets
+- **`GameFooter`** — advisor button, progress indicator
+- **`AdvisorPanel`** (`components/ui/`) — slides in with the Socratic advisor response; tracks remaining uses
+- **`GameToast`** — transient outcome messages after each round
+- **`GameLoadingScreen`** — shown while the API processes a round
+- **`CreditBadge`** — visual credit score indicator
 
-| Feature         | Method | Path                        | Used in                  |
-| --------------- | ------ | --------------------------- | ------------------------ |
-| Auth check      | GET    | `/auth/me`                  | AuthContext              |
-| Register        | POST   | `/auth/signin`              | auth/page                |
-| Login           | POST   | `/auth/login`               | auth/page                |
-| Logout          | POST   | `/auth/logout`              | AuthContext, profile     |
-| Create session  | POST   | `/game/session`             | setup/page               |
-| Submit choice   | POST   | `/game/session/round`       | GameContent              |
-| Load session    | GET    | `/game/session/:id`         | useGameSession           |
-| Abandon session | POST   | `/game/session/:id/abandon` | GameContent              |
-| Advisor         | POST   | `/game/session/:id/advisor` | lib/api.js, AdvisorPanel |
-| Debrief         | GET    | `/game/session/:id/debrief` | debrief/page             |
-| List sessions   | GET    | `/game/sessions`            | dashboard, setup         |
-| User stats      | GET    | `/game/sessions/userData`   | profile, dashboard       |
+### Debrief (`components/debrief/`)
 
-### Legacy / mock layer (`lib/api.js`)
+- **`DebriefView`** — top-level layout: verdict headline, score badge, and section navigation
+- **`DecisionBreakdown`** — round-by-round table of choices made vs. optimal, with immediate impact and 30-year projected cost
+- **`LessonCards`** — behavioral insight cards (dominant pattern, strengths, blind spots)
+- **`NetWorthChart`** (`components/ui/`) — Recharts line chart comparing player trajectory to optimal path, round by round
 
-Still contains `MOCK_ROUNDS`, `MOCK_LEADERBOARD`, and `getFinalDebrief` for reference and the leaderboard page. **Live gameplay does not use mock rounds.** Prefer `requestAdvisor(sessionId)` over deprecated `getAdvisorMessage`.
+### Landing Page (`app/page.jsx` + `components/`)
+
+- **`CoreSections`** — `HeroSection`, `StatsSection`, `MythBusterSection`, `HowItWorksSection`, `LeaderboardSection`, `FinalCTA`
+- **`InteractiveTools`** — client-side `CompoundCalculator` and `DecisionSimulator` — interactive without requiring auth
+- **`HeaderFooter`** — `Nav`, `Footer`, `Ticker`
+
+### Share (`components/share/`)
+
+- **`ShareSheet`** — bottom sheet with the share link and copy controls
+- **`ShareCard`** — the renderable card used on the public `/share/[slug]` route
 
 ---
 
-## Key components
+## Tech Stack
 
-### Game board (`components/game/`)
-
-```text
-┌─────────────┬──────────────────────────────┬────────────────┐
-│  Sidebar    │       Center Panel           │  Right Panel   │
-│  ~260px     │       flex-1                 │  ~320px        │
-│             │                              │                │
-│  Metrics    │  Round header + age          │  AdvisorPanel  │
-│  (8 cards)  │  SwipeDecisionCard           │  (desktop)     │
-│             │  [Confirm Decision]          │  BottomSheet   │
-│             │                              │  (mobile)      │
-└─────────────┴──────────────────────────────┴────────────────┘
-         ●●●●●◉●●●●   RoundProgress (GameFooter)
-```
-
-- **`GameContent.jsx`** — orchestrates session loading, round submission, exit flow, advisor state.
-- **`SwipeDecisionCard.tsx`** — Framer Motion swipe gestures + keyboard support.
-- **`AdvisorPanel.jsx`** — calls `requestAdvisor`; shows Socratic messages.
-- Crisis events render a **CRISIS** badge via `currentEvent.crisis`.
-
-### Layout & brand
-
-- **`AppNavbar.jsx`** — authenticated pages (dashboard, profile).
-- **`HeaderFooter.jsx`** — marketing shell on landing.
-- **`BrandLogo.jsx`** — shared SVG logo.
-
-### Dashboard
-
-- **`SessionDetailModal.jsx`** — drill into a past session's rounds and metrics.
-
----
-
-## Design system
-
-Defined in `app/globals.css` and used via Tailwind utility classes:
-
-| Token   | Value     | Usage                          |
-| ------- | --------- | ------------------------------ |
-| Base    | `#0A0A0A` | Page background                |
-| Surface | `#111111` | Cards, panels                  |
-| Border  | `#1F1F1F` | Dividers                       |
-| Accent  | `#F59E0B` | Primary actions, active states |
-| Success | `#10B981` | Positive metrics               |
-| Danger  | `#EF4444` | Crisis, errors                 |
-| Text    | `#F5F5F5` | Primary copy                   |
-| Muted   | `#A1A1A1` | Secondary copy                 |
-
-**Fonts:** Syne (headings), DM Sans (body) — loaded in `layout.jsx`.
-
----
-
-## Path aliases & conventions
-
-`tsconfig.json` maps `@/*` → project root:
-
-```js
-import { useGame } from "@/context/GameContext";
-import { MetricCard } from "@/components/ui/MetricCard";
-```
-
-- **Pages** in `app/` — default exports, `"use client"` where hooks are needed.
-- **Shared UI** in `components/` — grouped by domain (`game/`, `ui/`, `layout/`).
-- **Mixed JS/TS** — new interactive components can be `.tsx`; pages remain mostly `.jsx`.
-- **No simulation imports** — if you find yourself importing math or PRNG code, it belongs in the backend.
-
----
-
-## Development tips
-
-1. **Backend must be running** for auth, setup, game, and debrief. Mock data only covers leaderboard and deprecated helpers.
-2. **Session ID persistence** — stored in URL (`?sessionId=`) and `localStorage` key `gameSessionId` for reload resilience.
-3. **Auth redirects** — game and debrief pages redirect to `/auth` if `user` is null after loading.
-4. **Completed session guard** — `useGameSession` redirects completed sessions straight to debrief.
-5. **Adding a page** — create `app/your-route/page.jsx`, wrap with `AppNavbar` if authenticated, use `useAuth()` for gating.
-6. **Changing metrics display** — edit sidebar/panel components; metric _values_ come from API field names in `metrics` object.
-7. **Testing advisor/debrief locally** — requires backend `GROQ_API_KEY` (and Supabase for RAG-enhanced advisor).
-
-For simulation rules, API contracts, and AI pipeline details, see [backend/README.md](../backend/README.md).
-
-For monorepo overview and architecture diagram, see [README.md](../README.md).
+| Concern         | Technology                                   |
+| --------------- | -------------------------------------------- |
+| Framework       | Next.js 16, React 19, App Router             |
+| Styling         | Tailwind CSS v4                              |
+| Animation       | Framer Motion 12                             |
+| Charts          | Recharts 3                                   |
+| Icons           | Lucide React                                 |
+| Type safety     | TypeScript (selected files), JSX elsewhere   |
+| Linting         | ESLint with `eslint-config-next`             |
