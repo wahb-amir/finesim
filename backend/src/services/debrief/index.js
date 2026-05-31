@@ -161,6 +161,7 @@ function toDebriefUIPayload(session) {
     behavioralProfile: report?.behavioralProfile || null,
     decisionCosts: report?.decisionCosts || [],
     netWorthBreakdown: report?.netWorthBreakdown || null,
+    replayComparison: report?.replayComparison || null,
     optimalPath,
     netWorthProgression: netWorthRows.map((row) => ({
       round: row.round,
@@ -286,6 +287,22 @@ async function generateAndPersistDebrief(session) {
     );
     report = buildDeterministicDebrief(session);
     source = "deterministic";
+  }
+
+  if (session.isReplay && session.replayOf) {
+    const GameSession = require("../../Models/GameSession");
+    const original = await GameSession.findById(session.replayOf);
+    if (original && original.finalMetrics) {
+      report.replayComparison = {
+        netWorthDiff: (session.finalMetrics?.netWorth ?? 0) - (original.finalMetrics?.netWorth ?? 0),
+        creditScoreDiff: (session.finalMetrics?.creditScore ?? 0) - (original.finalMetrics?.creditScore ?? 0),
+        debtDiff: (session.finalMetrics?.totalDebt ?? 0) - (original.finalMetrics?.totalDebt ?? 0),
+        stressDiff: (session.finalMetrics?.stressIndex ?? 0) - (original.finalMetrics?.stressIndex ?? 0),
+        retirementDiff: (session.finalMetrics?.retirementBalance ?? 0) - (original.finalMetrics?.retirementBalance ?? 0),
+        summary: `You changed your decision at round ${session.replayFromRound}. ` + 
+          ((session.finalMetrics?.netWorth ?? 0) >= (original.finalMetrics?.netWorth ?? 0) ? "This timeline resulted in a stronger financial position." : "This timeline resulted in a weaker financial position compared to your original run.")
+      };
+    }
   }
 
   persistDebriefOnSession(session, report, sources);

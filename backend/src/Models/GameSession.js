@@ -39,6 +39,9 @@ const roundSchema = new mongoose.Schema(
       headline: { type: String },
       advisorHint: { type: String },
     },
+    stateSnapshot: { type: mongoose.Schema.Types.Mixed },
+    eventSnapshot: { type: mongoose.Schema.Types.Mixed },
+    narrativeSnapshot: { type: mongoose.Schema.Types.Mixed },
     timestamp: { type: Date, default: Date.now },
   },
   { _id: false },
@@ -74,6 +77,12 @@ const gameSessionSchema = new mongoose.Schema(
     },
     /** Next round number to play (1–11; 11 means finished). */
     currentRound: { type: Number, default: 1 },
+
+    // ── Replay metadata ──────────────────────────────────────────────────────
+    isReplay: { type: Boolean, default: false },
+    replayOf: { type: mongoose.Schema.Types.ObjectId, ref: "GameSession", index: true },
+    replayFromRound: { type: Number },
+
 
     // ── Authoritative simulation (server-only; never sent to clients) ────────
     /** Scenario key derived from goal, climate, and salary. */

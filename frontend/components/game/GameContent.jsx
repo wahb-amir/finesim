@@ -250,19 +250,10 @@ export function GameContent() {
       {replayContext?.round ? (
         <div className="mx-4 mt-3 rounded-xl border border-[#F59E0B]/30 bg-[#F59E0B]/5 px-4 py-3">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-[#F59E0B]">
-            Replay mode
-          </p>
-          <p className="mt-1 text-sm text-[#F5F5F5]">
-            Round {replayContext.round}
-            {replayContext.eventTitle
-              ? `: ${replayContext.eventTitle}`
-              : replayContext.label
-                ? ` — ${replayContext.label}`
-                : ""}
+            Replaying from Round {replayContext.round} — diverging from your original run
           </p>
           <p className="mt-1 text-[11px] text-[#A1A1A1]">
-            Your finances are restored up to this decision. Try the stronger
-            choice.
+            Previous rounds appear completed and locked.
           </p>
         </div>
       ) : null}

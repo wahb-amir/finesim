@@ -24,7 +24,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // ── Rate limiters ─────────────────────────────────────────────────────────────
-const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 1000 });
 
 // Tighter limit for AI endpoints — Groq is fast but debrief is expensive
 const aiLimiter = rateLimit({

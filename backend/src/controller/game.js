@@ -83,12 +83,16 @@ const createReplaySession = async (req, res) => {
       });
     }
 
-    const sourceRounds = [...(source.rounds || [])].sort(
-      (a, b) => a.round - b.round,
-    );
-    if (sourceRounds.length < round - 1) {
+    const sourceRoundObj = source.rounds.find((r) => r.round === round);
+    if (!sourceRoundObj || !sourceRoundObj.stateSnapshot) {
       return res.status(400).json({
-        message: "Source session does not have enough rounds to replay",
+        message: "Source session missing state snapshot for target round. Older sessions cannot be replayed.",
+      });
+    }
+
+    if (!sourceRoundObj.eventSnapshot && !source.currentEvent) {
+      return res.status(400).json({
+        message: "This game session lacks the necessary event snapshot data to replay. Please start a new game to use the What If feature.",
       });
     }
 
@@ -98,28 +102,6 @@ const createReplaySession = async (req, res) => {
     );
 
     const scenarioId = source.scenarioId || deriveScenarioId(source);
-    const seed = source.simSeed ?? hashStringToSeed(String(source._id));
-
-    let step = createNewGame({
-      scenarioId,
-      seed,
-      startSalary: source.startSalary,
-      climateLabel: source.climateLabel,
-      career: source.career,
-    });
-
-    for (let r = 1; r < round; r += 1) {
-      const prior = sourceRounds.find((sr) => sr.round === r);
-      if (!prior) {
-        return res.status(400).json({
-          message: `Source session is missing data for round ${r}`,
-        });
-      }
-      step = applyChoice({
-        state: step.state,
-        choice: choiceToSide(prior.choice),
-      });
-    }
 
     const session = await GameSession.create({
       userId: req.user._id,
@@ -130,25 +112,45 @@ const createReplaySession = async (req, res) => {
       climateLabel: source.climateLabel || "Stable",
       currentRound: round,
       status: "active",
-      rounds: [],
+      rounds: source.rounds.map(r => r.toObject()).filter(r => r.round < round),
+      isReplay: true,
+      replayOf: source._id,
+      replayFromRound: round,
     });
 
-    persistGameView(session, step);
+    const newSeed = hashStringToSeed(String(session._id));
+    
+    // Copy the snapshot and assign the new seed for post-divergence events
+    const snapshotState = JSON.parse(JSON.stringify(sourceRoundObj.stateSnapshot));
+    snapshotState.seed = newSeed;
+
     session.scenarioId = scenarioId;
-    session.simSeed = seed;
+    session.simSeed = newSeed;
+    session.simState = snapshotState;
+    session.currentEvent = sourceRoundObj.eventSnapshot || source.currentEvent;
+    session.currentNarrative = sourceRoundObj.narrativeSnapshot || source.currentNarrative;
+
+    persistGameView(session, {
+      state: snapshotState,
+      event: session.currentEvent,
+      narrative: session.currentNarrative
+    });
+    session.markModified("simState");
+    session.markModified("currentEvent");
+    session.markModified("currentNarrative");
     await session.save();
 
-    const metrics = toUIMetrics(step.metrics, step.state);
+    const metrics = toUIMetrics(getVisibleMetrics(snapshotState), snapshotState);
 
     res.status(201).json({
       success: true,
       sessionId: session._id,
       currentRound: session.currentRound,
       metrics,
-      event: step.event,
-      narrative: step.narrative,
+      event: session.currentEvent,
+      narrative: session.currentNarrative,
       scenarioId,
-      ageYears: step.state.ageYears,
+      ageYears: snapshotState.ageYears,
       replay: {
         fromSessionId: source._id,
         targetRound: round,
@@ -288,6 +290,9 @@ const submitRound = async (req, res) => {
             advisorHint: result.narrative.advisorHint,
           }
         : undefined,
+      stateSnapshot: session.simState,
+      eventSnapshot: eventBefore,
+      narrativeSnapshot: session.currentNarrative,
       timestamp: new Date(),
     });
 
@@ -439,10 +444,10 @@ const getSession = async (req, res) => {
 
 const listSessions = async (req, res) => {
   try {
-    const sessions = await GameSession.find({ userId: req.user._id })
-      .select(
-        "_id playerName career goal climateLabel startSalary status currentRound createdAt updatedAt finalMetrics scenarioId rounds aiSummary debriefData.headline.score debriefData.headline.scoreLabel",
-      )
+      const sessions = await GameSession.find({ userId: req.user._id })
+        .select(
+          "_id playerName career goal climateLabel startSalary status currentRound createdAt updatedAt finalMetrics scenarioId rounds aiSummary debriefData.headline.score debriefData.headline.scoreLabel isReplay replayOf replayFromRound",
+        )
       .sort({ createdAt: -1 })
       .limit(25);
     res.status(200).json({ success: true, sessions });
@@ -460,6 +465,7 @@ const getLeaderboard = async (req, res) => {
       {
         $match: {
           status: "completed",
+          isReplay: { $ne: true },
           "finalMetrics.netWorth": { $exists: true },
           "finalMetrics.creditScore": { $exists: true },
         },

@@ -24,7 +24,7 @@ function formatDate(dateStr) {
   });
 }
 
-function SessionCard({ session, onSelect }) {
+function SessionCard({ session, onSelect, isReplay = false }) {
   const config = STATUS_CONFIG[session.status] || STATUS_CONFIG.abandoned;
   const netWorth = session.finalMetrics?.netWorth;
   const roundsPlayed =
@@ -56,7 +56,7 @@ function SessionCard({ session, onSelect }) {
             className="mt-1 truncate text-lg font-bold text-[#F5F5F5] group-hover:text-white"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            {session.career || "Simulation Run"}
+            {isReplay ? `Replay (Round ${session.replayFromRound})` : (session.career || "Simulation Run")}
           </h3>
           <p className="mt-1 text-sm text-[#6B6B6B]">
             {prettifyLabel(session.goal)} · {session.climateLabel || "Stable"} ·{" "}
@@ -399,35 +399,75 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          {filteredSessions.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-[#2A2A2A] bg-[#101010]/50 py-20 text-center">
-              <div className="mb-4 text-4xl">📊</div>
-              <h2 className="text-xl font-bold text-[#F5F5F5]">
-                No simulations yet
-              </h2>
-              <p className="mx-auto mt-2 max-w-sm text-sm text-[#6B6B6B]">
-                Start your first financial life simulation to see your history,
-                decisions, and debriefs here.
-              </p>
-              <button
-                type="button"
-                onClick={() => router.push("/setup")}
-                className="mt-6 rounded-xl bg-[#F59E0B] px-6 py-3 text-sm font-semibold text-black transition hover:opacity-95"
-              >
-                Start Your First Run
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredSessions.map((session) => (
-                <SessionCard
-                  key={session._id}
-                  session={session}
-                  onSelect={handleSelectSession}
-                />
-              ))}
-            </div>
-          )}
+          {(() => {
+            if (filteredSessions.length === 0) {
+              return (
+                <div className="rounded-3xl border border-dashed border-[#2A2A2A] bg-[#101010]/50 py-20 text-center">
+                  <div className="mb-4 text-4xl">📊</div>
+                  <h2 className="text-xl font-bold text-[#F5F5F5]">
+                    No simulations yet
+                  </h2>
+                  <p className="mx-auto mt-2 max-w-sm text-sm text-[#6B6B6B]">
+                    Start your first financial life simulation to see your history,
+                    decisions, and debriefs here.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/setup")}
+                    className="mt-6 rounded-xl bg-[#F59E0B] px-6 py-3 text-sm font-semibold text-black transition hover:opacity-95"
+                  >
+                    Start Your First Run
+                  </button>
+                </div>
+              );
+            }
+
+            const tree = [];
+            const sessionMap = new Map();
+
+            filteredSessions.forEach((s) => {
+              sessionMap.set(s._id, { session: s, children: [] });
+            });
+
+            filteredSessions.forEach((s) => {
+              if (s.isReplay && s.replayOf && sessionMap.has(s.replayOf)) {
+                sessionMap.get(s.replayOf).children.push(sessionMap.get(s._id));
+              } else {
+                tree.push(sessionMap.get(s._id));
+              }
+            });
+
+            return (
+              <div className="space-y-4">
+                {tree.map((node) => (
+                  <div key={node.session._id} className="space-y-2">
+                    <SessionCard
+                      session={node.session}
+                      onSelect={handleSelectSession}
+                      isReplay={node.session.isReplay}
+                    />
+                    {node.children.length > 0 && (
+                      <div className="pl-6 space-y-2 relative before:absolute before:left-3 before:top-0 before:bottom-12 before:w-px before:bg-[#2A2A2A]">
+                        {node.children.map((childNode, idx) => {
+                          const isLast = idx === node.children.length - 1;
+                          return (
+                            <div key={childNode.session._id} className="relative">
+                              <div className="absolute -left-6 top-[28px] h-px w-6 bg-[#2A2A2A]" />
+                              <SessionCard
+                                session={childNode.session}
+                                onSelect={handleSelectSession}
+                                isReplay={true}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </>

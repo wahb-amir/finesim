@@ -249,6 +249,40 @@ export default function DebriefView({
         </div>
       ) : null}
 
+      {!compact && debrief.replayComparison ? (
+        <div className="rounded-2xl border border-[#10B981]/20 bg-[#10B981]/5 p-6 mb-8 animate-fade-in-up" style={{ animationDelay: "0.12s", animationFillMode: "both" }}>
+          <h2 className="font-bold text-[#F5F5F5] mb-2" style={{ fontFamily: "var(--font-display)" }}>
+            Alternate Timeline
+          </h2>
+          <p className="text-[13px] text-[#A1A1A1] mb-5 leading-relaxed">
+            {debrief.replayComparison.summary}
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: "Net Worth", diff: debrief.replayComparison.netWorthDiff, prefix: "$" },
+              { label: "Credit Score", diff: debrief.replayComparison.creditScoreDiff, prefix: "" },
+              { label: "Debt", diff: debrief.replayComparison.debtDiff, prefix: "$", invertColors: true },
+              { label: "Retirement", diff: debrief.replayComparison.retirementDiff, prefix: "$" }
+            ].map((stat) => {
+              // For debt, a negative difference is GOOD (green), positive is BAD (red). For everything else, positive is GOOD.
+              const isGood = stat.invertColors ? stat.diff < 0 : stat.diff > 0;
+              const isBad = stat.invertColors ? stat.diff > 0 : stat.diff < 0;
+              const color = isGood ? "#10B981" : isBad ? "#EF4444" : "#6B6B6B";
+              return (
+                <div key={stat.label} className="rounded-xl border border-[#1F1F1F] bg-[#0A0A0A] p-4">
+                  <div className="text-[10px] uppercase tracking-widest text-[#6B6B6B] mb-1">
+                    {stat.label} Diff
+                  </div>
+                  <div className="text-lg font-bold" style={{ color }}>
+                    {stat.diff > 0 ? "+" : ""}{stat.diff < 0 ? "-" : ""}{stat.prefix}{Math.abs(stat.diff).toLocaleString()}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
       {debrief.netWorthProgression?.length > 0 ? (
         <div
           className={`rounded-2xl bg-[#111111] border border-[#1F1F1F] ${compact ? "p-4 mb-4" : "p-6 mb-8"}`}
@@ -304,6 +338,8 @@ export default function DebriefView({
             highlightRound={highlightRound}
             onRoundSelect={setHighlightRound}
             compact={compact}
+            onReplayMoment={onReplayMoment}
+            replayLoading={replayLoading}
           />
         </div>
       ) : null}

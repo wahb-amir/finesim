@@ -14,6 +14,8 @@ export default function DecisionBreakdown({
   highlightRound,
   onRoundSelect,
   compact = false,
+  onReplayMoment,
+  replayLoading = false,
 }) {
   const [filter, setFilter] = useState("all");
   const [expanded, setExpanded] = useState(null);
@@ -165,6 +167,24 @@ export default function DecisionBreakdown({
                     <p className="mt-2 text-[11px] text-[#6B6B6B] leading-relaxed">
                       {cost.projectedCost30yrExplained}
                     </p>
+                  ) : null}
+                  {onReplayMoment ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onReplayMoment({ round: item.round, eventTitle: item.eventTitle });
+                      }}
+                      disabled={replayLoading}
+                      className="mt-4 w-full rounded-lg border border-[#2A2A2A] bg-[#111111] px-3 py-2.5 text-left text-[12px] font-medium text-[#F59E0B] transition hover:border-[#F59E0B]/40 hover:bg-[#161616] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F59E0B] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {replayLoading
+                        ? "Starting replay…"
+                        : "What If? — Branch from this choice"}
+                      <span className="block text-[10px] font-normal text-[#6B6B6B] mt-0.5">
+                        Jump back to this decision and explore an alternate timeline
+                      </span>
+                    </button>
                   ) : null}
                 </div>
               ) : null}
