@@ -115,7 +115,10 @@ const createReplaySession = async (req, res) => {
           message: `Source session is missing data for round ${r}`,
         });
       }
-      step = applyChoice({ state: step.state, choice: choiceToSide(prior.choice) });
+      step = applyChoice({
+        state: step.state,
+        choice: choiceToSide(prior.choice),
+      });
     }
 
     const session = await GameSession.create({

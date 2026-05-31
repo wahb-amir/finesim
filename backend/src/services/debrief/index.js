@@ -220,8 +220,7 @@ function mergeReportWithSessionComparison(session, report) {
     optimalCredit:
       report.optimalComparison?.optimalCredit ?? fallback.optimalCredit,
     optimalRetirement:
-      report.optimalComparison?.optimalRetirement ??
-      fallback.optimalRetirement,
+      report.optimalComparison?.optimalRetirement ?? fallback.optimalRetirement,
     netWorthByRound: report.netWorthByRound,
   };
 }

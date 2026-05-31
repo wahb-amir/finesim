@@ -123,9 +123,7 @@ function LeaderboardContent() {
         ) : leaderboard.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[#2A2A2A] bg-[#111111] py-16 text-center">
             <div className="mb-4 text-4xl">🏆</div>
-            <h2 className="text-xl font-bold text-[#F5F5F5]">
-              No scores yet
-            </h2>
+            <h2 className="text-xl font-bold text-[#F5F5F5]">No scores yet</h2>
             <p className="mx-auto mt-2 max-w-sm text-sm text-[#6B6B6B]">
               Complete a simulation to appear on the leaderboard. Your best run
               counts toward your rank.

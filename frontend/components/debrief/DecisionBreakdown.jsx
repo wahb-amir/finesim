@@ -31,10 +31,7 @@ export default function DecisionBreakdown({
       : 0;
 
   const costByRound = useMemo(
-    () =>
-      Object.fromEntries(
-        (decisionCosts || []).map((c) => [c.round, c]),
-      ),
+    () => Object.fromEntries((decisionCosts || []).map((c) => [c.round, c])),
     [decisionCosts],
   );
 
@@ -82,7 +79,9 @@ export default function DecisionBreakdown({
         </div>
       </div>
 
-      <div className={`space-y-2 ${compact ? "max-h-48 overflow-y-auto pr-1" : ""}`}>
+      <div
+        className={`space-y-2 ${compact ? "max-h-48 overflow-y-auto pr-1" : ""}`}
+      >
         {filtered.map((item) => {
           const isOpen = expanded === item.round;
           const isHighlighted = highlightRound === item.round;

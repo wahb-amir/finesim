@@ -128,13 +128,17 @@ export default function DebriefView({
 
   const gap =
     debrief.netWorthGap ??
-    (debrief.optimalNetWorth != null ? debrief.optimalNetWorth - netWorth : null);
+    (debrief.optimalNetWorth != null
+      ? debrief.optimalNetWorth - netWorth
+      : null);
 
   const lessonMistakes = lessonMistakesFromDebrief(debrief);
 
   return (
     <div className={compact ? "" : "pb-8"}>
-      <div className={`text-center ${compact ? "mb-6" : "mb-12"} animate-fade-in-up`}>
+      <div
+        className={`text-center ${compact ? "mb-6" : "mb-12"} animate-fade-in-up`}
+      >
         <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
           <div
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-[11px] font-medium"
@@ -162,7 +166,10 @@ export default function DebriefView({
         <p className={`text-[#A1A1A1] ${compact ? "text-sm" : "text-lg"} mb-2`}>
           {debrief.playerName || playerName || "Your"} net worth at age 31
           {debrief.score != null ? (
-            <span className="text-[#6B6B6B]"> · Score {debrief.score}/1000</span>
+            <span className="text-[#6B6B6B]">
+              {" "}
+              · Score {debrief.score}/1000
+            </span>
           ) : null}
         </p>
         <p

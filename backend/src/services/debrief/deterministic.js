@@ -123,7 +123,10 @@ function buildTakeaways(session, wrongRounds, gap) {
   if (wrongRounds.length >= 3) {
     items.push({
       title: "Replay your highest-cost rounds",
-      body: `You missed the optimal choice in ${wrongRounds.length} rounds. Focus on rounds ${wrongRounds.slice(0, 3).map((r) => r.round).join(", ")} where the path gap widened.`,
+      body: `You missed the optimal choice in ${wrongRounds.length} rounds. Focus on rounds ${wrongRounds
+        .slice(0, 3)
+        .map((r) => r.round)
+        .join(", ")} where the path gap widened.`,
       urgency: "this-year",
       estimatedImpact:
         gap > 0
@@ -188,7 +191,10 @@ function buildDeterministicDebrief(session) {
   const finalPlayer = session.finalMetrics?.netWorth ?? 0;
   const finalOptimal =
     comparison.optimalNetWorth ??
-    netWorthByRound.reduce((max, row) => Math.max(max, row.optimal), finalPlayer);
+    netWorthByRound.reduce(
+      (max, row) => Math.max(max, row.optimal),
+      finalPlayer,
+    );
   const gap = finalOptimal - finalPlayer;
 
   const wrongRounds = rounds.filter(
@@ -209,7 +215,8 @@ function buildDeterministicDebrief(session) {
 
   const decisionCosts = wrongRounds.map((r) => {
     const row = netWorthByRound.find((n) => n.round === r.round);
-    const delta = row?.delta ?? Math.max(0, (row?.optimal ?? 0) - (row?.player ?? 0));
+    const delta =
+      row?.delta ?? Math.max(0, (row?.optimal ?? 0) - (row?.player ?? 0));
     const choiceLetter = normalizeChoice(r.choice);
     return {
       round: r.round,
@@ -275,9 +282,13 @@ function buildDeterministicDebrief(session) {
       projectedValue30yrExplained: `$${Math.max(0, gap).toLocaleString()} gap × (1.07)^30 ≈ $${project30yr(Math.max(0, gap)).toLocaleString()}`,
       retirementGap: Math.max(
         0,
-        Math.round((comparison.optimalRetirement ?? 0) - (session.finalMetrics?.retirementBalance ?? 0)),
+        Math.round(
+          (comparison.optimalRetirement ?? 0) -
+            (session.finalMetrics?.retirementBalance ?? 0),
+        ),
       ),
-      retirementGapExplained: "Compared to heuristic optimal retirement balance at finish.",
+      retirementGapExplained:
+        "Compared to heuristic optimal retirement balance at finish.",
     },
     creditJourney: {
       startScore: firstCredit ?? null,

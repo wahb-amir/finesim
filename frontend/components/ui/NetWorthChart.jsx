@@ -39,7 +39,10 @@ function CustomTooltip({ active, payload, label }) {
     >
       <div className="font-bold text-[#F5F5F5] mb-2">Round {label}</div>
       {payload.map((entry, index) => (
-  <div key={`${entry.dataKey}-${index}`} className="flex items-center gap-2 mb-1">
+        <div
+          key={`${entry.dataKey}-${index}`}
+          className="flex items-center gap-2 mb-1"
+        >
           <div
             className="w-2 h-2 rounded-full flex-shrink-0"
             style={{ background: entry.color }}

@@ -26,7 +26,9 @@ export default function ShareLanding({ card, url }) {
 
         <div className="text-center space-y-6">
           <p className="text-[#A1A1A1] text-sm leading-relaxed max-w-sm mx-auto">
-            <span className="text-[#F5F5F5] font-medium">{card.playerName}</span>{" "}
+            <span className="text-[#F5F5F5] font-medium">
+              {card.playerName}
+            </span>{" "}
             simulated 10 years of money decisions in FinSim. Think you can beat
             their run?
           </p>

@@ -54,7 +54,10 @@ function StatPill({ label, value, accent }) {
       </p>
       <p
         className="text-sm font-bold truncate"
-        style={{ color: accent || "#F5F5F5", fontFamily: "var(--font-display)" }}
+        style={{
+          color: accent || "#F5F5F5",
+          fontFamily: "var(--font-display)",
+        }}
       >
         {value}
       </p>
@@ -65,7 +68,11 @@ function StatPill({ label, value, accent }) {
 /**
  * Viral FinSim result card — used in share sheet, public /share pages, and OG previews.
  */
-export default function ShareCard({ card, variant = "default", className = "" }) {
+export default function ShareCard({
+  card,
+  variant = "default",
+  className = "",
+}) {
   if (!card) return null;
 
   const positive = card.isPositive ?? (card.netWorth ?? 0) >= 0;
@@ -148,10 +155,7 @@ export default function ShareCard({ card, variant = "default", className = "" })
 
         {card.netWorthProgression?.length > 1 ? (
           <div className="mt-4 mb-1 opacity-90">
-            <Sparkline
-              points={card.netWorthProgression}
-              positive={positive}
-            />
+            <Sparkline points={card.netWorthProgression} positive={positive} />
           </div>
         ) : null}
 

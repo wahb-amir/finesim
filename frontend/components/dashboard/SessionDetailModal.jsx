@@ -94,7 +94,9 @@ export function SessionDetailModal({
     const path = optimalPathFromSession(session);
 
     return {
-      verdict: summary.verdict || "Completed simulation — open full debrief for analysis.",
+      verdict:
+        summary.verdict ||
+        "Completed simulation — open full debrief for analysis.",
       score: summary.score,
       scoreLabel: summary.scoreLabel,
       source: summary.source,

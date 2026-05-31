@@ -179,8 +179,14 @@ export function detectMistakePatterns(sessionOrRounds) {
     (r8 && thinEmergencyFund(r8.metricsBefore))
   ) {
     const anchor = r4 && thinEmergencyFund(r4.metricsBefore) ? r4 : r8;
-    if (!found.some((m) => m.id === CROSS_CUTTING.NO_EMERGENCY_FUND_BEFORE_CRISIS.id)) {
-      found.push(enrichMistake(CROSS_CUTTING.NO_EMERGENCY_FUND_BEFORE_CRISIS, anchor));
+    if (
+      !found.some(
+        (m) => m.id === CROSS_CUTTING.NO_EMERGENCY_FUND_BEFORE_CRISIS.id,
+      )
+    ) {
+      found.push(
+        enrichMistake(CROSS_CUTTING.NO_EMERGENCY_FUND_BEFORE_CRISIS, anchor),
+      );
     }
   }
 
@@ -200,7 +206,8 @@ export function detectMistakePatterns(sessionOrRounds) {
     if (!found.some((m) => m.id === CROSS_CUTTING.CARRIED_CC_BALANCE.id)) {
       found.push(
         enrichMistake(CROSS_CUTTING.CARRIED_CC_BALANCE, anchor, {
-          severity: maxCc > 2000 ? 92 : CROSS_CUTTING.CARRIED_CC_BALANCE.severity,
+          severity:
+            maxCc > 2000 ? 92 : CROSS_CUTTING.CARRIED_CC_BALANCE.severity,
         }),
       );
     }
@@ -210,10 +217,11 @@ export function detectMistakePatterns(sessionOrRounds) {
     const title = (r.eventTitle || "").toLowerCase();
     const id = (r.eventId || "").toLowerCase();
     const isCareer =
-      id.startsWith("career:") ||
-      /offer|salary|job|raise|negotiat/.test(title);
+      id.startsWith("career:") || /offer|salary|job|raise|negotiat/.test(title);
     if (isCareer && normalizeChoice(r.choice) === "B") {
-      if (!found.some((m) => m.id === CROSS_CUTTING.UNDER_NEGOTIATED_SALARY.id)) {
+      if (
+        !found.some((m) => m.id === CROSS_CUTTING.UNDER_NEGOTIATED_SALARY.id)
+      ) {
         found.push(enrichMistake(CROSS_CUTTING.UNDER_NEGOTIATED_SALARY, r));
       }
     }

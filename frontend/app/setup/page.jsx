@@ -358,8 +358,8 @@ function SetupContent() {
                   : ""}
             </p>
             <p className="mt-2 text-[12px] leading-relaxed text-[#A1A1A1]">
-              We&apos;ll restore your run up to this decision so you can try
-              the other choice.
+              We&apos;ll restore your run up to this decision so you can try the
+              other choice.
             </p>
             {replayContext?.fromSessionId ? (
               <button
@@ -368,7 +368,9 @@ function SetupContent() {
                 disabled={submitting}
                 className="mt-4 rounded-xl bg-[#F59E0B] px-5 py-2.5 text-sm font-semibold text-black transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {submitting ? "Starting replay…" : `Replay round ${replayRound} now →`}
+                {submitting
+                  ? "Starting replay…"
+                  : `Replay round ${replayRound} now →`}
               </button>
             ) : null}
           </div>

@@ -4,7 +4,10 @@ import Link from "next/link";
 
 export function Breadcrumb({ items }) {
   return (
-    <nav aria-label="Breadcrumb" className="mb-6 flex flex-wrap items-center gap-2 text-[13px]">
+    <nav
+      aria-label="Breadcrumb"
+      className="mb-6 flex flex-wrap items-center gap-2 text-[13px]"
+    >
       {items.map((item, i) => (
         <span key={item.label} className="flex items-center gap-2">
           {i > 0 ? <span className="text-[#4A4A4A]">/</span> : null}

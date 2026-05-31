@@ -90,7 +90,8 @@ function buildShareCard(session) {
       round: row.round,
       value: row.player ?? 0,
     })),
-    sharedAt: session.shareCreatedAt || session.debriefGeneratedAt || session.updatedAt,
+    sharedAt:
+      session.shareCreatedAt || session.debriefGeneratedAt || session.updatedAt,
     isPositive: netWorth >= 0,
   };
 }

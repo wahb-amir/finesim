@@ -81,6 +81,8 @@ export function debriefSummaryFromSession(session) {
       session?.debriefData?.headline?.scoreLabel ??
       session?.debriefData?.scoreLabel,
     verdict: session?.aiSummary || session?.debriefData?.headline?.verdict,
-    source: session?.debriefData?.meta?.source || (session?.debriefGeneratedAt ? "ai" : null),
+    source:
+      session?.debriefData?.meta?.source ||
+      (session?.debriefGeneratedAt ? "ai" : null),
   };
 }

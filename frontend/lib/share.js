@@ -30,7 +30,8 @@ export function buildPreviewCard({ debrief, displayMetrics, playerName }) {
     goal: debrief.goal,
     climateLabel: debrief.climateLabel,
     netWorth,
-    creditScore: displayMetrics?.creditScore ?? debrief.finalMetrics?.creditScore,
+    creditScore:
+      displayMetrics?.creditScore ?? debrief.finalMetrics?.creditScore,
     totalDebt: displayMetrics?.totalDebt ?? debrief.finalMetrics?.totalDebt,
     retirementBalance:
       displayMetrics?.retirementBalance ??

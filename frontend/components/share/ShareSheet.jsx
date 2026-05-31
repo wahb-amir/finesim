@@ -150,7 +150,9 @@ export default function ShareSheet({
           <ShareCard card={displayCard} />
 
           {loading && !url ? (
-            <p className="text-center text-xs text-[#6B6B6B]">Creating share link…</p>
+            <p className="text-center text-xs text-[#6B6B6B]">
+              Creating share link…
+            </p>
           ) : null}
           {error ? (
             <p className="text-center text-xs text-red-400">{error}</p>
@@ -159,16 +161,15 @@ export default function ShareSheet({
           {url ? (
             <div className="rounded-xl border border-[#1F1F1F] bg-[#111111] px-3 py-2.5 flex items-center gap-2">
               <Link2 className="w-4 h-4 shrink-0 text-[#F59E0B]" aria-hidden />
-              <span className="text-xs text-[#A1A1A1] truncate flex-1">{url}</span>
+              <span className="text-xs text-[#A1A1A1] truncate flex-1">
+                {url}
+              </span>
             </div>
           ) : null}
 
           <div className="flex flex-col sm:flex-row gap-2">
             <CopyButton label="Copy link" value={url} />
-            <CopyButton
-              label="Copy caption"
-              value={displayCard?.shareText}
-            />
+            <CopyButton label="Copy caption" value={displayCard?.shareText} />
           </div>
 
           <div className="flex gap-2">
