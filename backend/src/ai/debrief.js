@@ -268,6 +268,8 @@ async function generateDebriefReport(session) {
     );
   }
 
+  report.meta = { ...(report.meta || {}), source: "ai" };
+
   const sources = (chunks || []).map((c) => ({
     id: c.id,
     source: c.source,

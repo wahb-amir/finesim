@@ -271,13 +271,14 @@ const getSessionDebrief = async (req, res) => {
       });
     }
 
-    const { cached } = await generateAndPersistDebrief(session);
+    const { cached, source } = await generateAndPersistDebrief(session);
     const payload = toDebriefUIPayload(session);
     const metrics = finalMetricsToUI(session.finalMetrics, session.simState);
 
     res.status(200).json({
       success: true,
       cached,
+      source: payload.source || source,
       debrief: payload,
       metrics,
       session: toPublicSession(session),

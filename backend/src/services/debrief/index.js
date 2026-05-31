@@ -141,16 +141,31 @@ function toDebriefUIPayload(session) {
     report?.headline?.subverdict ||
     "Your 10-year financial simulation is complete.";
 
+  const finalPlayer = session.finalMetrics?.netWorth ?? 0;
+  const finalOptimal =
+    comparison?.optimalNetWorth ??
+    netWorthRows.reduce(
+      (max, row) => Math.max(max, row.optimal ?? row.player),
+      finalPlayer,
+    );
+
   return {
     verdict,
     subverdict: report?.headline?.subverdict,
     score: report?.headline?.score,
     scoreLabel: report?.headline?.scoreLabel,
+    source: report?.meta?.source || "ai",
+    netWorthGap: finalOptimal - finalPlayer,
+    optimalNetWorth: finalOptimal,
+    behavioralProfile: report?.behavioralProfile || null,
+    decisionCosts: report?.decisionCosts || [],
+    netWorthBreakdown: report?.netWorthBreakdown || null,
     optimalPath,
     netWorthProgression: netWorthRows.map((row) => ({
       round: row.round,
       player: row.player,
       optimal: row.optimal ?? row.player,
+      delta: (row.optimal ?? row.player) - row.player,
     })),
     report,
     sources: session.debriefSources || [],
@@ -174,8 +189,51 @@ function toDebriefUIPayload(session) {
   };
 }
 
+function mergeReportWithSessionComparison(session, report) {
+  const fallback = buildOptimalComparisonFromRounds(session.rounds || []);
+  const existing = session.optimalComparison?.toObject?.()
+    ? session.optimalComparison.toObject()
+    : session.optimalComparison || {};
+
+  if (!report.netWorthByRound?.length) {
+    report.netWorthByRound = fallback.netWorthByRound;
+  }
+
+  if (!report.optimalComparison) {
+    report.optimalComparison = {
+      optimalNetWorth: fallback.optimalNetWorth,
+      optimalCredit: fallback.optimalCredit,
+      optimalRetirement: fallback.optimalRetirement,
+      keyDifferences: [],
+    };
+  }
+
+  session.optimalComparison = {
+    ...existing,
+    optimalNetWorth:
+      report.optimalComparison?.optimalNetWorth ?? fallback.optimalNetWorth,
+    optimalCredit:
+      report.optimalComparison?.optimalCredit ?? fallback.optimalCredit,
+    optimalRetirement:
+      report.optimalComparison?.optimalRetirement ??
+      fallback.optimalRetirement,
+    netWorthByRound: report.netWorthByRound,
+  };
+}
+
+function persistDebriefOnSession(session, report, sources) {
+  session.debriefData = report;
+  session.debriefSources = sources || [];
+  session.aiSummary =
+    report?.headline?.verdict || report?.headline?.subverdict || null;
+  session.aiAdvice = report?.realLifeTakeaways || [];
+  session.debriefGeneratedAt = new Date();
+  mergeReportWithSessionComparison(session, report);
+}
+
 /**
  * Run RAG + LLM debrief and persist on the session document.
+ * Falls back to deterministic analysis if AI/RAG fails.
  */
 async function generateAndPersistDebrief(session) {
   if (session.debriefData) {
@@ -183,6 +241,7 @@ async function generateAndPersistDebrief(session) {
       cached: true,
       report: session.debriefData,
       sources: session.debriefSources,
+      source: session.debriefData?.meta?.source || "ai",
     };
   }
 
@@ -194,45 +253,31 @@ async function generateAndPersistDebrief(session) {
     throw err;
   }
 
-  const { generateDebriefReport } = require("../../ai/debrief");
-  const { report, sources } = await generateDebriefReport(session);
+  const { buildDeterministicDebrief } = require("./deterministic");
+  let report;
+  let sources = [];
+  let source = "ai";
 
-  session.debriefData = report;
-  session.debriefSources = sources;
-  session.aiSummary =
-    report?.headline?.verdict || report?.headline?.subverdict || null;
-  session.aiAdvice = report?.realLifeTakeaways || [];
-  session.debriefGeneratedAt = new Date();
-
-  if (report?.optimalComparison) {
-    session.optimalComparison = {
-      ...(session.optimalComparison?.toObject?.() ||
-        session.optimalComparison ||
-        {}),
-      optimalNetWorth:
-        report.optimalComparison.optimalNetWorth ??
-        session.optimalComparison?.optimalNetWorth,
-      optimalCredit:
-        report.optimalComparison.optimalCredit ??
-        session.optimalComparison?.optimalCredit,
-      optimalRetirement:
-        report.optimalComparison.optimalRetirement ??
-        session.optimalComparison?.optimalRetirement,
-    };
+  try {
+    const { generateDebriefReport } = require("../../ai/debrief");
+    const result = await generateDebriefReport(session);
+    report = result.report;
+    sources = result.sources;
+    mergeReportWithSessionComparison(session, report);
+  } catch (aiErr) {
+    console.error(
+      "[debrief] AI pipeline failed, using deterministic fallback:",
+      aiErr.message,
+    );
+    report = buildDeterministicDebrief(session);
+    source = "deterministic";
   }
 
-  if (report?.netWorthByRound?.length) {
-    session.optimalComparison = {
-      ...(session.optimalComparison?.toObject?.() ||
-        session.optimalComparison ||
-        {}),
-      netWorthByRound: report.netWorthByRound,
-    };
-  }
+  persistDebriefOnSession(session, report, sources);
 
   await session.save();
 
-  return { cached: false, report, sources };
+  return { cached: false, report, sources, source };
 }
 
 /**
@@ -255,6 +300,8 @@ module.exports = {
   finalMetricsToUI,
   toDebriefUIPayload,
   generateAndPersistDebrief,
+  persistDebriefOnSession,
+  mergeReportWithSessionComparison,
   toPublicSession,
   OPTIMAL_CHOICES,
 };
