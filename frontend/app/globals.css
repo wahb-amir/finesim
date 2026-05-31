@@ -175,6 +175,25 @@ body {
   background: linear-gradient(135deg, rgba(239, 68, 68, 0.06) 0%, #111111 60%);
 }
 
+/* Full-screen crisis heartbeat (rounds 4 & 8) */
+.crisis-flash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background: rgba(239, 68, 68, 0.45);
+  animation: crisis-flash-pulse 200ms ease-out forwards;
+}
+
+@keyframes crisis-flash-pulse {
+  0% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 /* Choice card glow on hover */
 .choice-card-hover:hover {
   border-color: rgba(245, 158, 11, 0.5);

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import DecisionBreakdown from "./DecisionBreakdown";
+import LessonCards from "./LessonCards";
+import { lessonMistakesFromDebrief } from "@/lib/mistake-patterns";
 
 const NetWorthChart = dynamic(() => import("@/components/ui/NetWorthChart"), {
   ssr: false,
@@ -97,6 +99,7 @@ export default function DebriefView({
   onPlayAgain,
   onDashboard,
   onShare,
+  onReplayMoment,
   copied = false,
 }) {
   const [highlightRound, setHighlightRound] = useState(null);
@@ -123,6 +126,8 @@ export default function DebriefView({
   const gap =
     debrief.netWorthGap ??
     (debrief.optimalNetWorth != null ? debrief.optimalNetWorth - netWorth : null);
+
+  const lessonMistakes = lessonMistakesFromDebrief(debrief);
 
   return (
     <div className={compact ? "" : "pb-8"}>
@@ -261,6 +266,13 @@ export default function DebriefView({
           />
         </div>
       ) : null}
+
+      <LessonCards
+        mistakes={lessonMistakes}
+        compact={compact}
+        onReplayMoment={onReplayMoment}
+        onHighlightRound={setHighlightRound}
+      />
 
       {optimalPath.length > 0 ? (
         <div

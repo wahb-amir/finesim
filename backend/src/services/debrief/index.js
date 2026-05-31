@@ -5,6 +5,7 @@
 
 const { toUIMetrics } = require("../simulation/metrics");
 const { getVisibleMetrics } = require("../simulation/engine");
+const { detectMistakePatterns } = require("./mistakes");
 
 const OPTIMAL_CHOICES = {
   1: "A",
@@ -170,6 +171,10 @@ function toDebriefUIPayload(session) {
     report,
     sources: session.debriefSources || [],
     advice: session.aiAdvice || report?.realLifeTakeaways || [],
+    lessonMistakes:
+      report?.lessonMistakes?.length > 0
+        ? report.lessonMistakes
+        : detectMistakePatterns(session),
     shareText: report?.shareText,
     playerName: session.playerName,
     career: session.career,
@@ -221,7 +226,14 @@ function mergeReportWithSessionComparison(session, report) {
   };
 }
 
+function attachLessonMistakes(session, report) {
+  const lessonMistakes = detectMistakePatterns(session);
+  report.lessonMistakes = lessonMistakes;
+  return lessonMistakes;
+}
+
 function persistDebriefOnSession(session, report, sources) {
+  attachLessonMistakes(session, report);
   session.debriefData = report;
   session.debriefSources = sources || [];
   session.aiSummary =
@@ -237,6 +249,10 @@ function persistDebriefOnSession(session, report, sources) {
  */
 async function generateAndPersistDebrief(session) {
   if (session.debriefData) {
+    if (!session.debriefData.lessonMistakes?.length) {
+      attachLessonMistakes(session, session.debriefData);
+      await session.save();
+    }
     return {
       cached: true,
       report: session.debriefData,
@@ -301,7 +317,9 @@ module.exports = {
   toDebriefUIPayload,
   generateAndPersistDebrief,
   persistDebriefOnSession,
+  attachLessonMistakes,
   mergeReportWithSessionComparison,
   toPublicSession,
+  detectMistakePatterns,
   OPTIMAL_CHOICES,
 };

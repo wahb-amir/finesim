@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const GOALS = [
   {
@@ -70,6 +70,7 @@ const PROFESSIONS = [
 
 function SetupContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const API = process.env.NEXT_PUBLIC_API_URL;
 
   const [loading, setLoading] = useState(true);
@@ -89,6 +90,19 @@ function SetupContent() {
   const [showResumePrompt, setShowResumePrompt] = useState(false);
 
   const [toast, setToast] = useState(null);
+  const [replayContext, setReplayContext] = useState(null);
+
+  const replayRound =
+    searchParams.get("replayRound") || replayContext?.round || null;
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("finsimReplay");
+      if (raw) setReplayContext(JSON.parse(raw));
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const showToast = (type, message) => {
     setToast({ type, message });
@@ -204,6 +218,7 @@ function SetupContent() {
       }
 
       localStorage.setItem("gameSessionId", sessionId);
+      sessionStorage.removeItem("finsimReplay");
       showToast("success", "Game session created");
 
       setTimeout(() => {
@@ -282,6 +297,25 @@ function SetupContent() {
       )}
 
       <div className="min-h-screen overflow-hidden bg-[#0A0A0A] px-4 py-10 text-white">
+        {replayRound ? (
+          <div className="mx-auto mb-6 max-w-2xl rounded-2xl border border-[#F59E0B]/30 bg-[#F59E0B]/5 px-5 py-4">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-[#F59E0B]">
+              Try again
+            </p>
+            <p className="mt-1 text-sm font-semibold text-[#F5F5F5]">
+              Replay the moment from round {replayRound}
+              {replayContext?.eventTitle
+                ? `: ${replayContext.eventTitle}`
+                : replayContext?.label
+                  ? ` — ${replayContext.label}`
+                  : ""}
+            </p>
+            <p className="mt-2 text-[12px] leading-relaxed text-[#A1A1A1]">
+              Your last run flagged this decision. Start a fresh simulation and
+              aim for the stronger choice when you reach a similar scenario.
+            </p>
+          </div>
+        ) : null}
         <div
           className="fixed left-1/2 top-1/4 h-[300px] w-[700px] -translate-x-1/2 opacity-[0.06] pointer-events-none"
           style={{
@@ -572,5 +606,15 @@ function SetupContent() {
 }
 
 export default function SetupPage() {
-  return <SetupContent />;
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center text-[#F59E0B]">
+          Loading...
+        </div>
+      }
+    >
+      <SetupContent />
+    </Suspense>
+  );
 }

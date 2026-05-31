@@ -48,6 +48,7 @@ export function GameContent() {
   const [toast, setToast] = useState(null);
   const [exiting, setExiting] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
+  const [crisisFlash, setCrisisFlash] = useState(false);
   const [advisorState, setAdvisorState] = useState({
     advisorMessages: [],
     advisorCallsUsed: 0,
@@ -110,6 +111,13 @@ export function GameContent() {
       router.replace("/auth");
     }
   }, [authLoading, user, router]);
+
+  useEffect(() => {
+    if (currentRound !== 4 && currentRound !== 8) return;
+    setCrisisFlash(true);
+    const timer = setTimeout(() => setCrisisFlash(false), 200);
+    return () => clearTimeout(timer);
+  }, [currentRound]);
 
   const handleConfirm = useCallback(async () => {
     if (
@@ -221,6 +229,9 @@ export function GameContent() {
 
   return (
     <div className="h-screen bg-[#0A0A0A] flex flex-col overflow-hidden">
+      {crisisFlash ? (
+        <div className="crisis-flash-overlay" aria-hidden="true" />
+      ) : null}
       <GameToast toast={toast} />
 
       <ConfirmModal

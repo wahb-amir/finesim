@@ -234,6 +234,9 @@ Output the JSON now:`;
 // ── Main export ───────────────────────────────────────────────────────────────
 
 async function generateDebriefReport(session) {
+  const { detectMistakePatterns } = require("../services/debrief/mistakes");
+  const lessonMistakes = detectMistakePatterns(session);
+
   const queries = buildDebriefQueries(session);
   const chunks = await retrieveMulti(queries, 8);
   const prompt = buildDebriefPrompt(session, chunks);
@@ -269,6 +272,7 @@ async function generateDebriefReport(session) {
   }
 
   report.meta = { ...(report.meta || {}), source: "ai" };
+  report.lessonMistakes = lessonMistakes;
 
   const sources = (chunks || []).map((c) => ({
     id: c.id,

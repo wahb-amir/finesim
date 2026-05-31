@@ -93,8 +93,28 @@ function DebriefContent() {
     resetGame();
     if (typeof window !== "undefined") {
       window.localStorage.removeItem("gameSessionId");
+      sessionStorage.removeItem("finsimReplay");
     }
     router.push("/setup");
+  };
+
+  const handleReplayMoment = (mistake) => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(
+        "finsimReplay",
+        JSON.stringify({
+          round: mistake.round,
+          mistakeId: mistake.id,
+          label: mistake.label,
+          eventTitle: mistake.eventTitle,
+          fromSessionId: sessionId,
+        }),
+      );
+      window.localStorage.removeItem("gameSessionId");
+    }
+    resetGame();
+    const q = mistake.round ? `?replayRound=${mistake.round}` : "";
+    router.push(`/setup${q}`);
   };
 
   if (isLoading) {
@@ -152,6 +172,7 @@ function DebriefContent() {
           scenarioId={scenarioId}
           showActions
           onPlayAgain={handlePlayAgain}
+          onReplayMoment={handleReplayMoment}
           onDashboard={() => router.push("/dashboard")}
           onShare={handleShare}
           copied={copied}

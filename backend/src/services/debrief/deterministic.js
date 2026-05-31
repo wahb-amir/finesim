@@ -3,6 +3,8 @@
  * Produces the same JSON shape the UI expects, derived only from session data.
  */
 
+const { detectMistakePatterns } = require("./mistakes");
+
 const OPTIMAL_CHOICES = {
   1: "A",
   2: "A",
@@ -317,6 +319,7 @@ function buildDeterministicDebrief(session) {
     netWorthByRound,
     realLifeTakeaways: buildTakeaways(session, wrongRounds, gap),
     shareText: `FinSim — ${session.playerName || "Player"}: $${finalPlayer.toLocaleString()} net worth, ${matchCount}/10 optimal decisions, score ${score}/1000`,
+    lessonMistakes: detectMistakePatterns(session),
   };
 }
 
