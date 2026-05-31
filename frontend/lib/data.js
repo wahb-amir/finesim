@@ -1,3 +1,5 @@
+import { Car, Lightbulb, Wallet, AlertCircle, Zap, RefreshCw, XCircle, CheckCircle, Rocket } from "lucide-react";
+
 export const compoundYears = [1, 2, 3, 5, 10, 20, 30];
 
 export function calcCompound(principal, rate, years) {
@@ -68,7 +70,7 @@ export const scenarios = [
     choices: [
       {
         label: "Finance a new car",
-        icon: "🚗",
+        icon: <Car size={24} />,
         desc: "$450/mo, 7% APR, 5 years",
         impact: -12800,
         mood: "danger",
@@ -77,7 +79,7 @@ export const scenarios = [
       },
       {
         label: "Buy used, invest the rest",
-        icon: "💡",
+        icon: <Lightbulb size={24} />,
         desc: "$8k used car, $200/mo invested",
         impact: 18400,
         mood: "success",
@@ -86,7 +88,7 @@ export const scenarios = [
       },
       {
         label: "Lease a luxury car",
-        icon: "💸",
+        icon: <Wallet size={24} />,
         desc: "$550/mo, own nothing at the end",
         impact: -19800,
         mood: "danger",
@@ -104,7 +106,7 @@ export const scenarios = [
     choices: [
       {
         label: "Pay only the minimum",
-        icon: "😬",
+        icon: <AlertCircle size={24} />,
         desc: "$45/mo minimum payment",
         impact: -2340,
         mood: "danger",
@@ -113,7 +115,7 @@ export const scenarios = [
       },
       {
         label: "Avalanche method",
-        icon: "⚡",
+        icon: <Zap size={24} />,
         desc: "Attack the highest APR first",
         impact: 1800,
         mood: "success",
@@ -122,7 +124,7 @@ export const scenarios = [
       },
       {
         label: "Transfer to 0% card",
-        icon: "🔄",
+        icon: <RefreshCw size={24} />,
         desc: "Balance transfer, pay it down",
         impact: 1200,
         mood: "success",
@@ -139,7 +141,7 @@ export const scenarios = [
     choices: [
       {
         label: "Skip it, need the money",
-        icon: "❌",
+        icon: <XCircle size={24} />,
         desc: "No contribution",
         impact: -89000,
         mood: "danger",
@@ -148,7 +150,7 @@ export const scenarios = [
       },
       {
         label: "Match only (5%)",
-        icon: "✅",
+        icon: <CheckCircle size={24} />,
         desc: "Contribute exactly 5%",
         impact: 89000,
         mood: "success",
@@ -157,7 +159,7 @@ export const scenarios = [
       },
       {
         label: "Max it out (15%)",
-        icon: "🚀",
+        icon: <Rocket size={24} />,
         desc: "Contribute 15% of salary",
         impact: 267000,
         mood: "success",

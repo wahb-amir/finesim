@@ -8,6 +8,7 @@ import {
   MythBusterSection,
   HowItWorksSection,
   LeaderboardSection,
+  ReplaySection,
   FinalCTA,
 } from "../components/sections/CoreSections";
 import {
@@ -67,6 +68,7 @@ export default function LandingPage() {
         <HeroSection onStart={handleStart} />
         <StatsSection />
         <CompoundCalculator />
+        <ReplaySection />
         <DecisionSimulator />
         <MythBusterSection />
         <HowItWorksSection />

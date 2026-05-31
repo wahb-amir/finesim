@@ -6,6 +6,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { AppNavbar } from "@/components/layout/AppNavbar";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { fetchLeaderboard } from "@/lib/api";
+import { Trophy } from "lucide-react";
 
 function LeaderboardContent() {
   const router = useRouter();
@@ -81,7 +82,7 @@ function LeaderboardContent() {
                 color: "#F59E0B",
               }}
             >
-              🏆 ALL-TIME LEADERBOARD
+              <Trophy size={12} className="inline mr-1" /> ALL-TIME LEADERBOARD
             </div>
             <h1
               className="text-3xl font-extrabold text-[#F5F5F5]"
@@ -122,7 +123,7 @@ function LeaderboardContent() {
           </div>
         ) : leaderboard.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[#2A2A2A] bg-[#111111] py-16 text-center">
-            <div className="mb-4 text-4xl">🏆</div>
+            <div className="mb-4 text-[#F59E0B] flex justify-center"><Trophy size={48} /></div>
             <h2 className="text-xl font-bold text-[#F5F5F5]">No scores yet</h2>
             <p className="mx-auto mt-2 max-w-sm text-sm text-[#6B6B6B]">
               Complete a simulation to appear on the leaderboard. Your best run

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { calcCompound, compoundYears, scenarios } from "../../lib/data";
+import { Lightbulb, Trophy, ThumbsUp, BookOpen } from "lucide-react";
 
 export function CompoundCalculator() {
   const [principal, setPrincipal] = useState(1000);
@@ -420,9 +421,12 @@ export function DecisionSimulator() {
                   fontWeight: 590,
                   letterSpacing: "0.08em",
                   marginBottom: 8,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
                 }}
               >
-                💡 LESSON
+                <Lightbulb size={14} /> LESSON
               </div>
               <p
                 style={{
@@ -474,8 +478,8 @@ export function DecisionSimulator() {
             textAlign: "center",
           }}
         >
-          <div style={{ fontSize: 48, marginBottom: 16 }}>
-            {wealth >= 40000 ? "🏆" : wealth >= 0 ? "👍" : "📚"}
+          <div style={{ marginBottom: 16 }}>
+            {wealth >= 40000 ? <Trophy size={48} color="#F59E0B" /> : wealth >= 0 ? <ThumbsUp size={48} color="#10B981" /> : <BookOpen size={48} color="#818CF8" />}
           </div>
           <h3
             style={{
