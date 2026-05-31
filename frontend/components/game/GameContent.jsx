@@ -49,6 +49,7 @@ export function GameContent() {
   const [exiting, setExiting] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
   const [crisisFlash, setCrisisFlash] = useState(false);
+  const [replayContext, setReplayContext] = useState(null);
   const [advisorState, setAdvisorState] = useState({
     advisorMessages: [],
     advisorCallsUsed: 0,
@@ -70,6 +71,15 @@ export function GameContent() {
     setGoal,
     showToast,
   });
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("finsimReplay");
+      if (raw) setReplayContext(JSON.parse(raw));
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   useEffect(() => {
     if (!session) return;
@@ -160,6 +170,9 @@ export function GameContent() {
 
       if (data.completed || data.status === "completed") {
         setDebriefData(null);
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("finsimReplay");
+        }
         router.push(`/debrief?sessionId=${sessionId}`);
         return;
       }
@@ -233,6 +246,26 @@ export function GameContent() {
         <div className="crisis-flash-overlay" aria-hidden="true" />
       ) : null}
       <GameToast toast={toast} />
+
+      {replayContext?.round ? (
+        <div className="mx-4 mt-3 rounded-xl border border-[#F59E0B]/30 bg-[#F59E0B]/5 px-4 py-3">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-[#F59E0B]">
+            Replay mode
+          </p>
+          <p className="mt-1 text-sm text-[#F5F5F5]">
+            Round {replayContext.round}
+            {replayContext.eventTitle
+              ? `: ${replayContext.eventTitle}`
+              : replayContext.label
+                ? ` — ${replayContext.label}`
+                : ""}
+          </p>
+          <p className="mt-1 text-[11px] text-[#A1A1A1]">
+            Your finances are restored up to this decision. Try the stronger
+            choice.
+          </p>
+        </div>
+      ) : null}
 
       <ConfirmModal
         open={showExitModal}

@@ -102,6 +102,7 @@ export default function DebriefView({
   onPlayAgain,
   onDashboard,
   onReplayMoment,
+  replayLoading = false,
 }) {
   const [highlightRound, setHighlightRound] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
@@ -273,6 +274,7 @@ export default function DebriefView({
         mistakes={lessonMistakes}
         compact={compact}
         onReplayMoment={onReplayMoment}
+        replayLoading={replayLoading}
         onHighlightRound={setHighlightRound}
       />
 

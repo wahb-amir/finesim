@@ -152,7 +152,17 @@ function SetupContent() {
             (s) => s.status === "active",
           );
 
-          if (unfinished) {
+          let isReplayFlow = Boolean(searchParams.get("replayRound"));
+          if (!isReplayFlow && typeof window !== "undefined") {
+            try {
+              const raw = sessionStorage.getItem("finsimReplay");
+              isReplayFlow = Boolean(JSON.parse(raw || "null")?.fromSessionId);
+            } catch {
+              /* ignore */
+            }
+          }
+
+          if (unfinished && !isReplayFlow) {
             setActiveSession(unfinished);
             setShowResumePrompt(true);
           }
@@ -166,7 +176,7 @@ function SetupContent() {
     };
 
     if (API) loadUserAndSession();
-  }, [API, router]);
+  }, [API, router, searchParams]);
 
   const handleContinueSession = () => {
     if (!activeSession?._id) return;
@@ -179,6 +189,43 @@ function SetupContent() {
     setShowResumePrompt(false);
     setActiveSession(null);
     setStep(1);
+  };
+
+  const handleReplayNow = async () => {
+    if (!replayContext?.fromSessionId || !replayRound || submitting) return;
+
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${API}/game/session/replay`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          fromSessionId: replayContext.fromSessionId,
+          targetRound: Number(replayRound),
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data?.success) {
+        showToast("error", data?.message || "Failed to start replay");
+        return;
+      }
+
+      const sessionId = data.sessionId;
+      if (!sessionId) {
+        showToast("error", "Replay started, but no session ID was returned");
+        return;
+      }
+
+      localStorage.setItem("gameSessionId", sessionId);
+      showToast("success", `Replay ready at round ${replayRound}`);
+      router.push(`/game?sessionId=${sessionId}`);
+    } catch {
+      showToast("error", "Server error");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleBegin = async () => {
@@ -311,9 +358,19 @@ function SetupContent() {
                   : ""}
             </p>
             <p className="mt-2 text-[12px] leading-relaxed text-[#A1A1A1]">
-              Your last run flagged this decision. Start a fresh simulation and
-              aim for the stronger choice when you reach a similar scenario.
+              We&apos;ll restore your run up to this decision so you can try
+              the other choice.
             </p>
+            {replayContext?.fromSessionId ? (
+              <button
+                type="button"
+                onClick={handleReplayNow}
+                disabled={submitting}
+                className="mt-4 rounded-xl bg-[#F59E0B] px-5 py-2.5 text-sm font-semibold text-black transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {submitting ? "Starting replay…" : `Replay round ${replayRound} now →`}
+              </button>
+            ) : null}
           </div>
         ) : null}
         <div

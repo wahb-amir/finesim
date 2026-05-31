@@ -53,6 +53,113 @@ function getSelectedOption(event, side) {
   return { title: option.title || "", description };
 }
 
+const createReplaySession = async (req, res) => {
+  try {
+    const { fromSessionId, targetRound } = req.body;
+    const round = Number(targetRound);
+
+    if (!fromSessionId || !Number.isFinite(round)) {
+      return res.status(400).json({
+        message: "fromSessionId and targetRound are required",
+      });
+    }
+    if (round < 1 || round > TOTAL_ROUNDS) {
+      return res.status(400).json({
+        message: `targetRound must be between 1 and ${TOTAL_ROUNDS}`,
+      });
+    }
+
+    const source = await GameSession.findOne({
+      _id: fromSessionId,
+      userId: req.user._id,
+    });
+    if (!source) {
+      return res.status(404).json({ message: "Source session not found" });
+    }
+    if (source.status !== "completed") {
+      return res.status(400).json({
+        message: "Replay is only available for completed sessions",
+        status: source.status,
+      });
+    }
+
+    const sourceRounds = [...(source.rounds || [])].sort(
+      (a, b) => a.round - b.round,
+    );
+    if (sourceRounds.length < round - 1) {
+      return res.status(400).json({
+        message: "Source session does not have enough rounds to replay",
+      });
+    }
+
+    await GameSession.updateMany(
+      { userId: req.user._id, status: "active" },
+      { $set: { status: "abandoned" } },
+    );
+
+    const scenarioId = source.scenarioId || deriveScenarioId(source);
+    const seed = source.simSeed ?? hashStringToSeed(String(source._id));
+
+    let step = createNewGame({
+      scenarioId,
+      seed,
+      startSalary: source.startSalary,
+      climateLabel: source.climateLabel,
+      career: source.career,
+    });
+
+    for (let r = 1; r < round; r += 1) {
+      const prior = sourceRounds.find((sr) => sr.round === r);
+      if (!prior) {
+        return res.status(400).json({
+          message: `Source session is missing data for round ${r}`,
+        });
+      }
+      step = applyChoice({ state: step.state, choice: choiceToSide(prior.choice) });
+    }
+
+    const session = await GameSession.create({
+      userId: req.user._id,
+      playerName: source.playerName || req.user.name || "Player",
+      career: source.career,
+      startSalary: source.startSalary,
+      goal: source.goal || "build-wealth",
+      climateLabel: source.climateLabel || "Stable",
+      currentRound: round,
+      status: "active",
+      rounds: [],
+    });
+
+    persistGameView(session, step);
+    session.scenarioId = scenarioId;
+    session.simSeed = seed;
+    await session.save();
+
+    const metrics = toUIMetrics(step.metrics, step.state);
+
+    res.status(201).json({
+      success: true,
+      sessionId: session._id,
+      currentRound: session.currentRound,
+      metrics,
+      event: step.event,
+      narrative: step.narrative,
+      scenarioId,
+      ageYears: step.state.ageYears,
+      replay: {
+        fromSessionId: source._id,
+        targetRound: round,
+      },
+    });
+  } catch (err) {
+    console.error("[createReplaySession]", err.message);
+    res.status(500).json({
+      message: "Failed to create replay session",
+      error: err.message,
+    });
+  }
+};
+
 const createSession = async (req, res) => {
   try {
     const { playerName, career, startSalary, goal, climateLabel } = req.body;
@@ -439,6 +546,7 @@ const userData = async (req, res) => {
 
 module.exports = {
   createSession,
+  createReplaySession,
   submitRound,
   abandonSession,
   getSessionDebrief,

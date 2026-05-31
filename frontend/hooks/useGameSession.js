@@ -31,9 +31,12 @@ export function useGameSession({
   useEffect(() => {
     const activeSessionId = routeSessionId || querySessionId || sessionId;
     if (!activeSessionId) {
-      if (!authLoading) router.replace("/setup");
+      if (authLoading) return;
+      router.replace("/setup");
       return;
     }
+
+    let cancelled = false;
 
     const loadSession = async () => {
       try {
@@ -47,11 +50,13 @@ export function useGameSession({
         const data = await res.json();
 
         if (!res.ok || !data?.success || !data?.session) {
-          router.replace("/setup");
+          if (!cancelled) router.replace("/setup");
           return;
         }
 
         const loadedSession = data.session;
+        if (cancelled) return;
+
         setSession(loadedSession);
         setSessionId(activeSessionId);
 
@@ -91,13 +96,16 @@ export function useGameSession({
         });
       } catch (err) {
         console.error("[loadSession]", err);
-        router.replace("/setup");
+        if (!cancelled) router.replace("/setup");
       } finally {
-        setLoadingSession(false);
+        if (!cancelled) setLoadingSession(false);
       }
     };
 
     loadSession();
+    return () => {
+      cancelled = true;
+    };
   }, [
     authLoading,
     hydrateGameView,

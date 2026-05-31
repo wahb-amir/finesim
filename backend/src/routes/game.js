@@ -3,6 +3,7 @@ const router = express.Router();
 const { authMiddleware } = require("../middleware/authMiddleware");
 const {
   createSession,
+  createReplaySession,
   submitRound,
   abandonSession,
   getSessionDebrief,
@@ -16,6 +17,9 @@ const { createSessionShare } = require("../controller/share");
 
 // POST /api/game/session          — start a new game session
 router.post("/session", authMiddleware, createSession);
+
+// POST /api/game/session/replay   — branch from a completed run at a target round
+router.post("/session/replay", authMiddleware, createReplaySession);
 
 // POST /api/game/session/round    — submit a round choice
 router.post("/session/round", authMiddleware, submitRound);

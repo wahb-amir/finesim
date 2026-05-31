@@ -24,6 +24,7 @@ function DebriefContent() {
   } = useGame();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [replayLoading, setReplayLoading] = useState(false);
   const [serverMetrics, setServerMetrics] = useState(null);
 
   useEffect(() => {
@@ -87,23 +88,54 @@ function DebriefContent() {
     router.push("/setup");
   };
 
-  const handleReplayMoment = (mistake) => {
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem(
-        "finsimReplay",
-        JSON.stringify({
-          round: mistake.round,
-          mistakeId: mistake.id,
-          label: mistake.label,
-          eventTitle: mistake.eventTitle,
+  const handleReplayMoment = async (mistake) => {
+    if (!sessionId || !mistake?.round || replayLoading) return;
+
+    setReplayLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`${API}/game/session/replay`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
           fromSessionId: sessionId,
+          targetRound: mistake.round,
         }),
-      );
-      window.localStorage.removeItem("gameSessionId");
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.message || "Failed to start replay");
+      }
+
+      const replaySessionId = data.sessionId;
+      if (!replaySessionId) {
+        throw new Error("Replay started, but no session ID was returned");
+      }
+
+      resetGame();
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("gameSessionId", replaySessionId);
+        sessionStorage.setItem(
+          "finsimReplay",
+          JSON.stringify({
+            round: mistake.round,
+            mistakeId: mistake.id,
+            label: mistake.label,
+            eventTitle: mistake.eventTitle,
+            fromSessionId: sessionId,
+          }),
+        );
+      }
+
+      router.push(`/game?sessionId=${replaySessionId}`);
+    } catch (err) {
+      setError(err.message || "Could not start replay");
+    } finally {
+      setReplayLoading(false);
     }
-    resetGame();
-    const q = mistake.round ? `?replayRound=${mistake.round}` : "";
-    router.push(`/setup${q}`);
   };
 
   if (isLoading) {
@@ -162,6 +194,7 @@ function DebriefContent() {
           showActions
           onPlayAgain={handlePlayAgain}
           onReplayMoment={handleReplayMoment}
+          replayLoading={replayLoading}
           onDashboard={() => router.push("/dashboard")}
           shareSessionId={sessionId}
         />

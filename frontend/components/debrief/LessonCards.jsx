@@ -4,6 +4,7 @@ export default function LessonCards({
   mistakes = [],
   compact = false,
   onReplayMoment,
+  replayLoading = false,
   onHighlightRound,
 }) {
   if (!mistakes.length) return null;
@@ -57,11 +58,14 @@ export default function LessonCards({
               <button
                 type="button"
                 onClick={() => onReplayMoment(m)}
-                className="mt-4 w-full rounded-lg border border-[#2A2A2A] bg-[#111111] px-3 py-2.5 text-left text-[12px] font-medium text-[#F59E0B] transition hover:border-[#F59E0B]/40 hover:bg-[#161616] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F59E0B]"
+                disabled={replayLoading}
+                className="mt-4 w-full rounded-lg border border-[#2A2A2A] bg-[#111111] px-3 py-2.5 text-left text-[12px] font-medium text-[#F59E0B] transition hover:border-[#F59E0B]/40 hover:bg-[#161616] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F59E0B] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                What if I&apos;d chosen differently here?
+                {replayLoading
+                  ? "Starting replay…"
+                  : "What if I'd chosen differently here?"}
                 <span className="block text-[10px] font-normal text-[#6B6B6B] mt-0.5">
-                  Start a fresh run focused on this moment
+                  Jump back to this decision with your prior choices restored
                 </span>
               </button>
             ) : null}
