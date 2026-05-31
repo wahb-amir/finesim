@@ -123,6 +123,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [selectedSession, setSelectedSession] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [debriefPreview, setDebriefPreview] = useState(null);
+  const [debriefLoading, setDebriefLoading] = useState(false);
   const [filter, setFilter] = useState("all");
 
   const loadSessions = useCallback(async () => {
@@ -152,6 +154,8 @@ export default function DashboardPage() {
   const handleSelectSession = async (session) => {
     setSelectedSession(session);
     setDetailLoading(true);
+    setDebriefPreview(null);
+    setDebriefLoading(session.status === "completed");
 
     try {
       const res = await fetch(`${API}/game/session/${session._id}`, {
@@ -165,10 +169,26 @@ export default function DashboardPage() {
           rounds: data.session.rounds,
         });
       }
+
+      if (session.status === "completed") {
+        try {
+          const debriefRes = await fetch(
+            `${API}/game/session/${session._id}/debrief`,
+            { credentials: "include" },
+          );
+          const debriefData = await debriefRes.json();
+          if (debriefData?.success && debriefData.debrief) {
+            setDebriefPreview(debriefData.debrief);
+          }
+        } catch (debriefErr) {
+          console.error(debriefErr);
+        }
+      }
     } catch (err) {
       console.error(err);
     } finally {
       setDetailLoading(false);
+      setDebriefLoading(false);
     }
   };
 
@@ -213,7 +233,12 @@ export default function DashboardPage() {
       <SessionDetailModal
         session={selectedSession}
         loading={detailLoading}
-        onClose={() => setSelectedSession(null)}
+        debriefPreview={debriefPreview}
+        debriefLoading={debriefLoading}
+        onClose={() => {
+          setSelectedSession(null);
+          setDebriefPreview(null);
+        }}
         onViewDebrief={handleViewDebrief}
         onContinue={handleContinue}
       />
