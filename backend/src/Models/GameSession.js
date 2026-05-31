@@ -112,6 +112,20 @@ const gameSessionSchema = new mongoose.Schema(
       stressIndex: { type: Number },
       debtToIncome: { type: Number },
       emergencyFundMonths: { type: Number },
+      /**
+       * Server-computed 0-100 normalized outcome score.
+       * Measures decision quality relative to income/time — not influenced by startSalary.
+       * Used as the primary leaderboard ranking metric.
+       */
+      outcomeScore: {
+        composite: { type: Number },
+        netWorthScore: { type: Number },
+        resilienceScore: { type: Number },
+        debtHealthScore: { type: Number },
+        creditHealthScore: { type: Number },
+        stabilityScore: { type: Number },
+        trajectoryScore: { type: Number },
+      },
     },
     /** Gross annual salary after 10 simulated years. */
     finalSalary: { type: Number },

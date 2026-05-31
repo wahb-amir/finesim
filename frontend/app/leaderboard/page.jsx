@@ -54,16 +54,14 @@ function LeaderboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] pb-16">
+    <section className="min-h-screen bg-[#0A0A0A] pb-16">
       <AppNavbar />
-
       <div
         className="fixed top-0 left-1/2 -translate-x-1/2 w-96 h-48 opacity-[0.06] pointer-events-none"
         style={{
           background: "radial-gradient(ellipse, #F59E0B, transparent 70%)",
         }}
       />
-
       <div className="max-w-3xl mx-auto px-4 pt-10 relative z-10">
         <Breadcrumb
           items={[
@@ -71,7 +69,6 @@ function LeaderboardContent() {
             { label: "Leaderboard" },
           ]}
         />
-
         <div className="flex items-start justify-between mb-8">
           <div>
             <div
@@ -91,7 +88,7 @@ function LeaderboardContent() {
               Top Simulators
             </h1>
             <p className="text-[#6B6B6B] text-sm mt-1">
-              Ranked by each player&apos;s best completed run
+              Ranked by each player&apos;s best completed run (performance score)
             </p>
           </div>
           <button
@@ -106,7 +103,6 @@ function LeaderboardContent() {
             New Simulation
           </button>
         </div>
-
         {error ? (
           <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-8 text-center">
             <p className="text-sm text-red-400">{error}</p>
@@ -126,8 +122,7 @@ function LeaderboardContent() {
             <div className="mb-4 text-[#F59E0B] flex justify-center"><Trophy size={48} /></div>
             <h2 className="text-xl font-bold text-[#F5F5F5]">No scores yet</h2>
             <p className="mx-auto mt-2 max-w-sm text-sm text-[#6B6B6B]">
-              Complete a simulation to appear on the leaderboard. Your best run
-              counts toward your rank.
+              Complete a simulation to appear on the leaderboard. Your best run counts toward your rank.
             </p>
             <button
               type="button"
@@ -139,77 +134,67 @@ function LeaderboardContent() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-[40px_1fr_100px_100px_90px] gap-3 px-4 mb-2">
-              {["#", "Player", "Net Worth", "Credit", "Score"].map((h) => (
-                <div
-                  key={h}
-                  className="text-[10px] text-[#4A4A4A] uppercase tracking-widest font-medium"
-                >
-                  {h}
-                </div>
-              ))}
+            <div className="grid grid-cols-[40px_1fr_120px_120px_80px] gap-3 px-4 mb-2 text-[10px] text-[#4A4A4A] uppercase tracking-widest font-medium">
+              <div>#</div>
+              <div>Player</div>
+              <div>Career</div>
+              <div>Performance</div>
+              <div>Score</div>
             </div>
-
             <div className="rounded-2xl bg-[#111111] border border-[#1F1F1F] overflow-hidden">
               {leaderboard.map((player) => {
                 const isCurrentPlayer = player.isCurrentPlayer;
                 const isTop3 = player.rank <= 3;
-
+                const displayScore = player.outcomeScore ? Math.round(player.outcomeScore.composite) : Math.round(player.score);
+                const progress = player.outcomeScore ? player.outcomeScore.composite : player.score;
                 return (
                   <div
                     key={`${player.rank}-${player.userId}`}
-                    className="grid grid-cols-[40px_1fr_100px_100px_90px] gap-3 items-center px-4 py-3.5 border-b last:border-b-0 transition-colors"
+                    className="grid grid-cols-[40px_1fr_120px_120px_80px] gap-3 items-center px-4 py-3.5 border-b last:border-b-0 transition-colors"
                     style={{
                       borderColor: "#1A1A1A",
-                      background: isCurrentPlayer
-                        ? "rgba(245,158,11,0.05)"
-                        : "transparent",
-                      borderLeft: isCurrentPlayer
-                        ? "2px solid rgba(245,158,11,0.4)"
-                        : "2px solid transparent",
+                      background: isCurrentPlayer ? "rgba(245,158,11,0.05)" : "transparent",
+                      borderLeft: isCurrentPlayer ? "2px solid rgba(245,158,11,0.4)" : "2px solid transparent",
                     }}
                     aria-current={isCurrentPlayer ? "true" : undefined}
                   >
-                    <div>
-                      {isTop3 ? (
-                        <div
-                          className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-extrabold"
-                          style={{
-                            background:
-                              player.rank === 1
-                                ? "rgba(245,158,11,0.15)"
-                                : player.rank === 2
-                                  ? "rgba(161,161,161,0.12)"
-                                  : "rgba(180,100,40,0.12)",
-                            color:
-                              player.rank === 1
-                                ? "#F59E0B"
-                                : player.rank === 2
-                                  ? "#A1A1A1"
-                                  : "#B46428",
-                            border: `1px solid ${
-                              player.rank === 1
-                                ? "rgba(245,158,11,0.3)"
-                                : player.rank === 2
-                                  ? "rgba(161,161,161,0.25)"
-                                  : "rgba(180,100,40,0.25)"
-                            }`,
-                          }}
-                        >
-                          {player.rank}
-                        </div>
-                      ) : (
-                        <span
-                          className="text-[13px] font-medium pl-2"
-                          style={{
-                            color: isCurrentPlayer ? "#F59E0B" : "#4A4A4A",
-                          }}
-                        >
-                          {player.rank}
-                        </span>
-                      )}
-                    </div>
-
+                    <div>{isTop3 ? (
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-extrabold"
+                        style={{
+                          background:
+                            player.rank === 1
+                              ? "rgba(245,158,11,0.15)"
+                              : player.rank === 2
+                              ? "rgba(161,161,161,0.12)"
+                              : "rgba(180,100,40,0.12)",
+                          color:
+                            player.rank === 1
+                              ? "#F59E0B"
+                              : player.rank === 2
+                              ? "#A1A1A1"
+                              : "#B46428",
+                          border: `1px solid ${
+                            player.rank === 1
+                              ? "rgba(245,158,11,0.3)"
+                              : player.rank === 2
+                              ? "rgba(161,161,161,0.25)"
+                              : "rgba(180,100,40,0.25)"
+                          }`,
+                        }}
+                      >
+                        {player.rank}
+                      </div>
+                    ) : (
+                      <span
+                        className="text-[13px] font-medium pl-2"
+                        style={{
+                          color: isCurrentPlayer ? "#F59E0B" : "#4A4A4A",
+                        }}
+                      >
+                        {player.rank}
+                      </span>
+                    )}</div>
                     <div
                       className="text-sm font-medium truncate"
                       style={{
@@ -219,45 +204,23 @@ function LeaderboardContent() {
                     >
                       {isCurrentPlayer ? `${player.name} (You)` : player.name}
                     </div>
-
-                    <div
-                      className="text-sm font-semibold tabular-nums"
-                      style={{
-                        color: player.netWorth >= 0 ? "#10B981" : "#EF4444",
-                      }}
-                    >
-                      ${player.netWorth.toLocaleString()}
+                    <div className="text-sm" style={{ color: "#F5F5F5" }}>
+                      {player.career || "-"}
                     </div>
-
-                    <div
-                      className="text-sm font-medium tabular-nums"
-                      style={{
-                        color:
-                          player.creditScore >= 700
-                            ? "#10B981"
-                            : player.creditScore >= 600
-                              ? "#F59E0B"
-                              : "#EF4444",
-                      }}
-                    >
-                      {player.creditScore}
+                    <div className="text-sm font-medium" style={{ color: "#F5F5F5" }}>
+                      {player.outcomeScore ? `${Math.round(player.outcomeScore.composite)} / 100` : `${player.score}`}
                     </div>
-
                     <div className="text-sm font-bold text-[#F5F5F5] tabular-nums">
-                      {player.score.toLocaleString()}
+                      {displayScore}
                     </div>
                   </div>
                 );
               })}
             </div>
-
-            <div className="mt-4 flex gap-4 text-[11px] text-[#4A4A4A]">
-              <span>Score = (Net Worth ÷ 8) + (Credit Score × 2)</span>
-            </div>
           </>
         )}
       </div>
-    </div>
+    </section>
   );
 }
 

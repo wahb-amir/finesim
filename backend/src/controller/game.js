@@ -175,6 +175,15 @@ const createSession = async (req, res) => {
         .json({ message: "career and startSalary are required" });
     }
 
+    // Validate salary range — prevents leaderboard abuse via inflated starting salary.
+    // The simulation score is income-normalized, but a sane cap keeps the experience
+    // coherent and prevents display / arithmetic overflow issues.
+    const salary = Number(startSalary);
+    if (!Number.isFinite(salary) || salary < 15_000 || salary > 500_000) {
+      return res
+        .status(400)
+        .json({ message: "Starting salary must be between $15,000 and $500,000" });
+    }
     const session = await GameSession.create({
       userId: req.user._id,
       playerName: playerName || req.user.name || "Player",
@@ -461,39 +470,53 @@ const listSessions = async (req, res) => {
 
 const getLeaderboard = async (req, res) => {
   try {
+    // Primary ranking: outcomeScore.composite (0-100, normalized against income/time).
+    // This cannot be gamed by choosing a high starting salary because the score is
+    // computed relative to starting conditions by the server engine.
+    //
+    // Fallback for older sessions (pre-outcomeScore): use credit score only (300-850
+    // mapped to 0-100), which is also salary-agnostic.
     const entries = await GameSession.aggregate([
       {
         $match: {
           status: "completed",
           isReplay: { $ne: true },
-          "finalMetrics.netWorth": { $exists: true },
           "finalMetrics.creditScore": { $exists: true },
         },
       },
       {
         $addFields: {
-          score: {
-            $floor: {
-              $add: [
-                { $divide: ["$finalMetrics.netWorth", 8] },
-                { $multiply: ["$finalMetrics.creditScore", 2] },
-              ],
+          // Prefer persisted outcomeScore.composite; fall back to credit-derived score
+          primaryScore: {
+            $cond: {
+              if: { $gt: [{ $ifNull: ["$finalMetrics.outcomeScore.composite", null] }, null] },
+              then: "$finalMetrics.outcomeScore.composite",
+              // Fallback: map credit score (300-850) to 0-100
+              else: {
+                $multiply: [
+                  { $divide: [{ $subtract: ["$finalMetrics.creditScore", 300] }, 550] },
+                  100,
+                ],
+              },
             },
           },
         },
       },
-      { $sort: { score: -1, updatedAt: -1 } },
+      { $sort: { primaryScore: -1, updatedAt: -1 } },
       {
         $group: {
           _id: "$userId",
           sessionId: { $first: "$_id" },
           playerName: { $first: "$playerName" },
+          career: { $first: "$career" },
+          climateLabel: { $first: "$climateLabel" },
           netWorth: { $first: "$finalMetrics.netWorth" },
           creditScore: { $first: "$finalMetrics.creditScore" },
-          score: { $first: "$score" },
+          primaryScore: { $first: "$primaryScore" },
+          outcomeScore: { $first: "$finalMetrics.outcomeScore" },
         },
       },
-      { $sort: { score: -1 } },
+      { $sort: { primaryScore: -1 } },
       { $limit: 50 },
       {
         $lookup: {
@@ -512,9 +535,12 @@ const getLeaderboard = async (req, res) => {
       rank: index + 1,
       userId: String(entry._id),
       name: entry.user?.name || entry.playerName || "Player",
+      career: entry.career || null,
+      climateLabel: entry.climateLabel || null,
       netWorth: entry.netWorth ?? 0,
       creditScore: entry.creditScore ?? 0,
-      score: entry.score ?? 0,
+      score: Math.round((entry.primaryScore ?? 0) * 10) / 10,
+      outcomeScore: entry.outcomeScore ?? null,
       sessionId: entry.sessionId ? String(entry.sessionId) : null,
       isCurrentPlayer: String(entry._id) === currentUserId,
     }));

@@ -23,6 +23,7 @@ var __toCommonJS = (mod) =>
 var engine_exports = {};
 __export(engine_exports, {
   applyChoice: () => applyChoice,
+  computeOutcomeScore: () => computeOutcomeScore,
   createNewGame: () => createNewGame,
   getVisibleMetrics: () => getVisibleMetrics,
   nextEvent: () => nextEvent,
@@ -683,6 +684,7 @@ function getVisibleMetrics(state) {
 0 &&
   (module.exports = {
     applyChoice,
+    computeOutcomeScore,
     createNewGame,
     getVisibleMetrics,
     nextEvent,

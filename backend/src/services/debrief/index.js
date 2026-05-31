@@ -4,7 +4,7 @@
  */
 
 const { toUIMetrics } = require("../simulation/metrics");
-const { getVisibleMetrics } = require("../simulation/engine");
+const { getVisibleMetrics, computeOutcomeScore } = require("../simulation/engine");
 const { detectMistakePatterns } = require("./mistakes");
 
 const OPTIMAL_CHOICES = {
@@ -59,6 +59,25 @@ function buildOptimalComparisonFromRounds(rounds) {
 }
 
 function buildFinalMetrics(storedMetrics, simState) {
+  // Compute the server-side outcome score (0-100 normalized, salary-agnostic)
+  // so the leaderboard can rank by decision quality, not by raw net worth.
+  let outcomeScore = null;
+  if (simState) {
+    try {
+      const scores = computeOutcomeScore(simState);
+      outcomeScore = {
+        composite: scores.composite,
+        netWorthScore: scores.netWorthScore,
+        resilienceScore: scores.resilienceScore,
+        debtHealthScore: scores.debtHealthScore,
+        creditHealthScore: scores.creditHealthScore,
+        stabilityScore: scores.stabilityScore,
+        trajectoryScore: scores.trajectoryScore,
+      };
+    } catch (e) {
+      // non-fatal: fall back to null
+    }
+  }
   return {
     netWorth: storedMetrics.netWorth,
     creditScore: storedMetrics.creditScore,
@@ -70,6 +89,7 @@ function buildFinalMetrics(storedMetrics, simState) {
     stressIndex: storedMetrics.stressIndex,
     debtToIncome: storedMetrics.debtToIncome,
     emergencyFundMonths: storedMetrics.emergencyFundMonths,
+    outcomeScore,
   };
 }
 
