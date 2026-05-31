@@ -35,10 +35,10 @@ function SessionCard({ session, onSelect, isReplay = false, hasReplays = false, 
     session.debriefData?.scoreLabel;
 
   return (
-    <button
-      type="button"
+        <div
+      role="button"
       onClick={() => onSelect(session)}
-      className="group w-full rounded-2xl border border-[#242424] bg-[#101010] p-5 text-left transition-all duration-200 hover:border-[#F59E0B]/40 hover:bg-[#131313] hover:shadow-[0_0_30px_rgba(245,158,11,0.06)]"
+      className="group w-full rounded-2xl border border-[#242424] bg-[#101010] p-5 text-left transition-all duration-200 hover:border-[#F59E0B]/40 hover:bg-[#131313] hover:shadow-[0_0_30px_rgba(245,158,11,0.06)] cursor-pointer"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
@@ -126,7 +126,7 @@ function SessionCard({ session, onSelect, isReplay = false, hasReplays = false, 
           </button>
         )}
       </div>
-    </button>
+    </div>
   );
 }
 
