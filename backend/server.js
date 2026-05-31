@@ -11,7 +11,9 @@ const Auth = require("./src/routes/auth");
 const AI = require("./src/routes/ai");
 const Game = require("./src/routes/game");
 const Share = require("./src/routes/share");
+
 const app = express();
+let server;
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(
@@ -24,12 +26,14 @@ app.use(express.json());
 app.use(cookieParser());
 
 // ── Rate limiters ─────────────────────────────────────────────────────────────
-const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 1000 });
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
+});
 
-// Tighter limit for AI endpoints — Groq is fast but debrief is expensive
 const aiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 20, // 20 advisor calls/min per IP
+  windowMs: 60 * 1000,
+  max: 20,
   message: { message: "Too many AI requests, slow down" },
 });
 
@@ -49,18 +53,57 @@ app.use((req, res) => res.status(404).json({ message: "Route not found" }));
 
 // ── Global error handler ──────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
-  console.error("[GlobalError]", err.message);
-  res
-    .status(500)
-    .json({ message: "Internal server error", error: err.message });
+  console.error("[GlobalError]", err);
+  res.status(500).json({
+    message: "Internal server error",
+    error: err.message,
+  });
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
-connectDB().then(() => {
-  app.listen(PORT, () =>
-    console.log(`🚀 FinSim server running on port ${PORT}`),
-  );
-});
+
+async function start() {
+  try {
+    await connectDB();
+
+    server = app.listen(PORT, () => {
+      console.log(`🚀 FinSim server running on port ${PORT}`);
+
+      // Tell PM2 the process is ready when using wait_ready
+      if (process.send) {
+        process.send("ready");
+      }
+    });
+  } catch (err) {
+    console.error("Failed to start server:", err);
+    process.exit(1);
+  }
+}
+
+function shutdown(signal) {
+  console.log(`Received ${signal}, shutting down gracefully...`);
+
+  if (!server) {
+    process.exit(0);
+    return;
+  }
+
+  server.close(() => {
+    console.log("HTTP server closed.");
+    process.exit(0);
+  });
+
+  // Force exit if shutdown hangs
+  setTimeout(() => {
+    console.error("Forced shutdown after timeout.");
+    process.exit(1);
+  }, 10000).unref();
+}
+
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+
+start();
 
 module.exports = app;

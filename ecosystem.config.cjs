@@ -4,18 +4,27 @@ module.exports = {
       name: "finsim-api",
       cwd: "/root/finsim/backend",
       script: "server.js",
-      instances: 1,
-      exec_mode: "fork",
+
+      // Zero-downtime friendly
+      exec_mode: "cluster",
+      instances: 2,
+
       autorestart: true,
       max_restarts: 10,
       min_uptime: "10s",
       watch: false,
-      // This tells PM2 to inject the variables from your .env file
+
+      // Wait until app sends "ready"
+      wait_ready: true,
+      listen_timeout: 10000,
+      kill_timeout: 10000,
+
       env: {
         NODE_ENV: "production",
         PORT: 8081,
       },
-      // Explicitly tell PM2 to load your local .env file variables
+
+      // Keep only if you're actually using this pattern
       dot_env: "/root/finsim/backend/.env",
     },
   ],
